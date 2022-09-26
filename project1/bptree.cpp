@@ -35,6 +35,7 @@ void *BPTree::search(int x)
     if (root == NULL)
     {
         cout << "Tree is empty\n";
+        return NULL;
     }
     else
     {
@@ -64,6 +65,7 @@ void *BPTree::search(int x)
             }
         }
         cout << "Not found\n";
+        return NULL;
     }
 }
 

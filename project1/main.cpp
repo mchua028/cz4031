@@ -12,7 +12,7 @@ using namespace std;
 
 // Global variables
 int memSize = 100000000;
-int blkSize = 500;
+int blkSize = 200;
 
 // block structure declaration
 struct block
@@ -184,30 +184,31 @@ int main()
     }*/
 
     // tree.display(tree.getRoot());
-    void *record = tree.search(6018);
-    record = record - 14;
-    for (int i = 0; i < 10; i++)
-    {
-        cout << (*(char *)(record + i));
-    }
-    cout << endl
-         << *(float *)(record + 10) << endl
-         << *(int *)(record + 14) << endl
+    int c;
+    cout << "enter the numVote to retrive the record or -1 to exit: " << endl
          << endl;
+    cin >> c;
+    while (c != -1)
+    {
+        void *record = tree.search(c);
+        if (record != NULL)
+        {
+            record = record - 14;
+            for (int i = 0; i < 10; i++)
+            {
+                cout << (*(char *)(record + i));
+            }
+            cout << endl
+                 << *(float *)(record + 10) << endl
+                 << *(int *)(record + 14) << endl
+                 << endl;
+        }
 
-    /*BPTree node;
-    node.insert(5);
-    node.insert(15);
-    node.insert(25);
-    node.insert(35);
-    node.insert(45);
-    node.insert(55);
-    node.insert(40);
-    node.insert(30);
-    node.insert(20);
-    node.display(node.getRoot());
-
-    node.search(15);*/
+        cout << "enter the numVote to retrive the record or -1 to exit: " << endl
+             << endl;
+        cin >> c;
+        cout << endl;
+    }
 
     free(start);
     return 0;
