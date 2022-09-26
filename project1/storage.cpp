@@ -69,13 +69,13 @@ int Storage::getRecordSize() {
 }
 
 /**
- * @brief Get record based on a starting pointer to the record
+ * @brief Get the record and the block indices that are accessed based on a starting pointer to the record
  * 
  * @param startPtr A pointer to the first byte of the record 
- * @return Record
+ * @return Tuple of (Record, unordered set of block indices that are accessed)
  * @throw std::invalid_argument if the starting pointer is invalid
  */
-Record Storage::getRecord(std::byte* startPtr) {
+std::tuple<Record, std::unordered_set<int>> Storage::getRecord(std::byte* startPtr) {
     // Wrong starting pointer or not occupied
     if (!this->isValidStartPtr(startPtr) || !occupied.count(startPtr)) {
         throw std::invalid_argument("Invalid starting pointer");
@@ -93,7 +93,39 @@ Record Storage::getRecord(std::byte* startPtr) {
     std::memcpy(&r.numVotes, ptr, sizeof(r.numVotes));
     ptr += sizeof(r.numVotes);
 
-    return r;
+    int startBlockIdx = ( startPtr - this->storagePtr ) / this->blockSize;
+    int endBlockIdx = (ptr - this->storagePtr) / this->blockSize;
+
+    std::unordered_set<int> blockIndices;
+    for (int i = startBlockIdx; i <= endBlockIdx; i++) {
+        blockIndices.insert(i);
+    }
+
+    return {r, blockIndices};
+}
+
+/**
+ * @brief Get the records and the block indices accessed based on starting pointers to records
+ * 
+ * @param startPtrs Vector of pointers to the first byte of records
+ * @return Tuple of (vector of records, unordered set of block indices that are accessed)
+ */
+std::tuple<std::vector<Record>, std::unordered_set<int>> Storage::getRecords(std::vector<std::byte *> startPtrs) {
+    std::vector<Record> records;
+    std::unordered_set<int> allBlockIndices;
+
+    for (auto startPtr: startPtrs) {
+        Record r;
+        std::unordered_set<int> rBlockIndices;
+
+        std::tie(r, rBlockIndices) = this->getRecord(startPtr);
+
+        // Keep track of fetched records and block accesses
+        records.push_back(r);
+        allBlockIndices.merge(rBlockIndices);
+    }
+
+    return {records, allBlockIndices};
 }
 
 /**
