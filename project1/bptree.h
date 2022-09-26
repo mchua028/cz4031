@@ -1,27 +1,37 @@
-const int NODE_KEYS = 3;
+#pragma once
+#include <climits>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+using namespace std;
 
-class Node {
+int MAX = 3;
+
+// BP node
+class Node
+{
+    bool IS_LEAF;
+    int *key, size;
+    void **ptr;
     friend class BPTree;
-    private:
-        int size;
-        int keys[NODE_KEYS];
-        // If leaf, points to record bytes, else, points to nodes
-        void *ptrs[NODE_KEYS + 1];
-        bool isLeaf;
-    
-    public:
-        Node();
-        ~Node();
+
+public:
+    Node();
+    Node(int);
 };
 
-class BPTree {
-    private:
-        Node *root;
+// BP tree
+class BPTree
+{
+    Node *root;
+    void insertInternal(int, Node *, Node *);
+    Node *findParent(Node *, Node *);
 
-    public:
-        BPTree();
-        ~BPTree();
-        void build();
-        void search();
-        void remove();
+public:
+    BPTree();
+    ~BPTree();
+    void *search(int);
+    void insert(int, void *);
+    void display(Node *);
+    Node *getRoot();
 };
