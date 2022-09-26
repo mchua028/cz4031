@@ -136,7 +136,7 @@ BPTree read_record(void *memStart, int blkSize, int MAX)
             *(float *)startFreeSpace = stof(record[1]);
             startFreeSpace = startFreeSpace + 4;
             *(int *)startFreeSpace = stoi(record[2]);
-            // adding to bptree, requires changing for final merge
+            // adding to bptree, requires changing for final merge, change startFreeSpace to address of the record
             node.insert(stoi(record[2]), startFreeSpace, MAX);
             *BytesLeft = *BytesLeft - recordSize;
             *offSetToFreeSpaceInBlk = *offSetToFreeSpaceInBlk + recordSize;
