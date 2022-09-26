@@ -70,12 +70,12 @@ void *BPTree::search(int x)
 }
 
 // Insert Operation
-void BPTree::insert(int x, void *recordAdd)
+void BPTree::insert(int x, void *recordAdd, int MAX)
 {
     if (root == NULL) // if no root
     {
         void *test;
-        root = new Node;
+        root = new Node(MAX);
         root->key[0] = x;
         // insert adress of record insertion point 1
         root->ptr[0] = recordAdd;
@@ -122,7 +122,7 @@ void BPTree::insert(int x, void *recordAdd)
         }
         else // if the leaf node is full
         {
-            Node *newLeaf = new Node;
+            Node *newLeaf = new Node(MAX);
             // int virtualNode[MAX + 1]; // create an array of size max+1 to store the keys, including the new key
             Node *virtualNode = new Node(MAX + 1); // create a virtualnode with 1 more key+pointer
             for (int i = 0; i < MAX; i++)
@@ -159,7 +159,7 @@ void BPTree::insert(int x, void *recordAdd)
             }
             if (cursor == root)
             {
-                Node *newRoot = new Node;
+                Node *newRoot = new Node(MAX);
                 newRoot->key[0] = newLeaf->key[0];
                 newRoot->ptr[0] = cursor;
                 newRoot->ptr[1] = newLeaf;
@@ -197,7 +197,7 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
     }
     else
     {
-        Node *newInternal = new Node;
+        Node *newInternal = new Node(MAX);
         int virtualKey[MAX + 1];
         Node *virtualPtr[MAX + 2];
         for (int i = 0; i < MAX; i++)
@@ -234,7 +234,7 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
         }
         if (cursor == root)
         {
-            Node *newRoot = new Node;
+            Node *newRoot = new Node(MAX);
             newRoot->key[0] = cursor->key[cursor->size];
             newRoot->ptr[0] = cursor;
             newRoot->ptr[1] = newInternal;

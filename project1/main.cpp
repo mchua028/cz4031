@@ -80,7 +80,7 @@ void *init_disk()
     return memStart;
 }
 
-BPTree read_record(void *memStart, int blkSize)
+BPTree read_record(void *memStart, int blkSize, int MAX)
 {
 
     // Create a text string, which is used to output the text file
@@ -137,7 +137,7 @@ BPTree read_record(void *memStart, int blkSize)
             startFreeSpace = startFreeSpace + 4;
             *(int *)startFreeSpace = stoi(record[2]);
             // adding to bptree, requires changing for final merge
-            node.insert(stoi(record[2]), startFreeSpace);
+            node.insert(stoi(record[2]), startFreeSpace, MAX);
             *BytesLeft = *BytesLeft - recordSize;
             *offSetToFreeSpaceInBlk = *offSetToFreeSpaceInBlk + recordSize;
             // break;
@@ -160,8 +160,10 @@ int main()
     void *start = init_disk();
     void *ptr = start;
     // ptr = memStart;
-
-    BPTree tree = read_record(start, blkSize);
+    // calculate tree node size based on blksize so a node is bounded by blksize
+    // x = max no of keys, 4(x) + 8(x+1) <= blksize
+    int max = (blkSize - 8) / 12;
+    BPTree tree = read_record(start, blkSize, max);
 
     /*cout << "blk id: " << *(int *)ptr << endl;
     cout << "isFull: " << *(bool *)(ptr + 4) << endl;
