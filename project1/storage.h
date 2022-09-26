@@ -1,6 +1,8 @@
 #pragma once
 #include <cstddef>
 #include <unordered_set>
+#include <vector>
+#include <tuple>
 
 struct Record {
     char tconst[10];
@@ -34,7 +36,8 @@ class Storage {
         int getSize();
         int getBlockSize();
         int getRecordSize();
-        Record getRecord(std::byte* startPtr);
+        std::tuple<Record, std::unordered_set<int>> getRecord(std::byte* startPtr);
+        std::tuple<std::vector<Record>, std::unordered_set<int>> getRecords(std::vector<std::byte *> startPtrs); 
         std::byte* insertRecord(Record r);
         void deleteRecord(std::byte* startPtr);
 };
