@@ -1,12 +1,14 @@
 #pragma once
+using namespace std;
 const int NODE_KEYS = 3;
 
 struct ptrs_struct{
-    Node *nodePtr;
+    void *nodePtr;
     vector <byte*> recordPtrs;
 };
 
 class Node {
+    
     friend class BPTree;
     private:
         int size;
@@ -22,6 +24,8 @@ class Node {
         Node(int i);
         ~Node();
 };
+
+
 
 class BPTree {
     private:

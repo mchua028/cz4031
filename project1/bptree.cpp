@@ -6,8 +6,6 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include "storage.h"
-#include "storage.cpp"
 #include "bptree.h"
 using namespace std;
 
@@ -49,12 +47,12 @@ Node* BPTree::search(int x)
             {
                 if (x < cursor->keys[i])
                 {
-                    cursor = cursor->ptrs[i].nodePtr;
+                    cursor = (Node *)cursor->ptrs[i].nodePtr;
                     break;
                 }
                 if (i == cursor->size - 1)
                 {
-                    cursor = cursor->ptrs[i + 1].nodePtr;
+                    cursor = (Node *)cursor->ptrs[i + 1].nodePtr;
                     break;
                 }
             }
@@ -64,7 +62,7 @@ Node* BPTree::search(int x)
             if (cursor->keys[i] == x)
             {
                 cout << "Found\n";
-                return cursor->ptrs[i].nodePtr;
+                return (Node *)cursor->ptrs[i].nodePtr;
             }
         }
         cout << "Not found\n";
@@ -113,12 +111,12 @@ void BPTree::insert(int key, byte *recordAdd)
             {
                 if (key < cursor->keys[i])
                 {
-                    cursor = cursor->ptrs[i].nodePtr;
+                    cursor = (Node *)cursor->ptrs[i].nodePtr;
                     break;
                 }
                 if (i == cursor->size - 1)
                 {
-                    cursor = cursor->ptrs[i + 1].nodePtr;
+                    cursor = (Node *)cursor->ptrs[i + 1].nodePtr;
                     break;
                 }
             }
@@ -237,7 +235,7 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
         }
         for (int i = 0; i < NODE_KEYS + 1; i++)
         {
-            virtualPtr[i] = cursor->ptrs[i].nodePtr;
+            virtualPtr[i] = (Node *)cursor->ptrs[i].nodePtr;
         }
         //find position to insert x
         int i = 0, j;
@@ -302,20 +300,20 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
 Node *BPTree::findParent(Node *cursor, Node *child)
 {
     Node *parent;
-    if (cursor->isLeaf || (cursor->ptrs[0].nodePtr)->isLeaf)
+    if (cursor->isLeaf || ((Node *)cursor->ptrs[0].nodePtr)->isLeaf)
     {
         return NULL;
     }
     for (int i = 0; i < cursor->size + 1; i++)
     {
-        if (cursor->ptrs[i].nodePtr == child)
+        if ((Node *)cursor->ptrs[i].nodePtr == child)
         {
             parent = cursor;
             return parent;
         }
         else
         {
-            parent = findParent(cursor->ptrs[i].nodePtr, child);
+            parent = findParent((Node *)cursor->ptrs[i].nodePtr, child);
             if (parent != NULL)
                 return parent;
         }
@@ -337,7 +335,7 @@ void BPTree::display(Node *cursor)
         {
             for (int i = 0; i < cursor->size + 1; i++)
             {
-                display(cursor->ptrs[i].nodePtr);
+                display((Node *)cursor->ptrs[i].nodePtr);
             }
         }
     }
@@ -347,31 +345,4 @@ void BPTree::display(Node *cursor)
 Node *BPTree::getRoot()
 {
     return root;
-}
-
-
-
-
-Node* BPTree::search(int key) {
-    vector<vector<int>> indexes;
-    vector<int> blocks;
-    int avgRating;
-    
-    int *p=this->root->keys;
-    Record r;
-
-    if (this->root->isLeaf){
-        for (int i=0;i<sizeof(*(this->root->keys));i++){
-            if (this->root->keys[i]==key){
-                r=*(this->root->ptrs[i]);
-                return this->root->ptrs[i];
-            }
-        }
-    }
-
-    for (int i=0;i<sizeof(*p);i++){
-        
-    }
-    
-    
 }
