@@ -30,8 +30,8 @@ BPTree::~BPTree()
     // delete[] root;
 }
 
-// Search operation
-Node* BPTree::search(int x)
+// Search operation for insert
+Node* BPTree::search(int key)
 {
     if (root == NULL)
     {
@@ -41,11 +41,12 @@ Node* BPTree::search(int x)
     else
     {
         Node *cursor = root;
+        //find leaf node which may contain key
         while (cursor->isLeaf == false)
         {
             for (int i = 0; i < cursor->size; i++)
             {
-                if (x < cursor->keys[i])
+                if (key < cursor->keys[i])
                 {
                     cursor = (Node *)cursor->ptrs[i].nodePtr;
                     break;
@@ -57,17 +58,241 @@ Node* BPTree::search(int x)
                 }
             }
         }
+        //find key in leaf node
         for (int i = 0; i < cursor->size; i++)
         {
-            if (cursor->keys[i] == x)
+            if (cursor->keys[i] == key)
             {
                 cout << "Found\n";
-                return (Node *)cursor->ptrs[i].nodePtr;
+                return (Node *)cursor;
             }
         }
         cout << "Not found\n";
         return NULL;
     }
+}
+
+
+// Search operation for a key
+vector<byte *> BPTree::searchRecords(int key)
+{
+    bool found=false;
+    vector<vector<int>> indexes;
+    int noOfIndexes=0;
+    vector<int> newIndex;
+    vector<byte *> recordList;
+    if (root == NULL)
+    {
+        cout << "Tree is empty\n";
+    }
+    else
+    {
+        Node *cursor = root;
+        //find leaf node which may contain key
+        while (cursor->isLeaf == false)
+        {
+            //capturing index node's contents
+            if (noOfIndexes<5){
+                noOfIndexes++;
+                newIndex.clear();
+                for (int i=0;i<cursor->size;i++){
+                    newIndex.push_back(cursor->keys[i]);
+                }
+                indexes.push_back(newIndex);
+            }
+            
+
+            for (int i = 0; i < cursor->size; i++)
+            {
+                if (key < cursor->keys[i])
+                {
+                    cursor = (Node *)cursor->ptrs[i].nodePtr;
+                    break;
+                }
+                if (i == cursor->size - 1)
+                {
+                    cursor = (Node *)cursor->ptrs[i + 1].nodePtr;
+                    break;
+                }
+            }
+        }
+        //capturing leaf node's contents
+        if (noOfIndexes<5){
+            noOfIndexes++;
+            newIndex.clear();
+            for (int i=0;i<cursor->size;i++){
+                newIndex.push_back(cursor->keys[i]);
+            }
+            indexes.push_back(newIndex);
+        }
+
+        //find key in leaf node
+        for (int i = 0; i < cursor->size; i++)
+        {
+            if (cursor->keys[i] == key)
+            {
+                cout << "Found\n";
+                found=true;
+                recordList=cursor->ptrs[i].recordPtrs;
+                break;
+            }
+        }
+        if (!found){
+            cout << "Not found\n";
+        }
+        
+    }
+    for (int i=0;i<indexes.size();i++){
+        cout << "Contents of index block " << i << ":" << endl;
+        for (int j=0;j<indexes[i].size();j++){
+            cout << indexes[i][j] << ", ";
+        }
+        cout << "\n";
+    }
+    return recordList;
+}
+
+//search Range operation
+vector<byte *> BPTree::searchRange(int startKey, int endKey){
+    bool found=false;
+    bool end=false;
+    int startPos;
+    vector<vector<int>> indexes;
+    int noOfIndexes=0;
+    vector<int> newIndex;
+    vector<byte *> recordList;
+    if (root == NULL)
+    {
+        cout << "Tree is empty\n";
+    }
+    else
+    {
+        Node *cursor = root;
+        //find leaf node which may contain startKey
+        while (cursor->isLeaf == false)
+        {
+            //capturing index node's contents
+            if (noOfIndexes<5){
+                noOfIndexes++;
+                newIndex.clear();
+                for (int i=0;i<cursor->size;i++){
+                    newIndex.push_back(cursor->keys[i]);
+                }
+                indexes.push_back(newIndex);
+            }
+            
+
+            for (int i = 0; i < cursor->size; i++)
+            {
+                if (startKey < cursor->keys[i])
+                {
+                    cursor = (Node *)cursor->ptrs[i].nodePtr;
+                    break;
+                }
+                if (i == cursor->size - 1)
+                {
+                    cursor = (Node *)cursor->ptrs[i + 1].nodePtr;
+                    break;
+                }
+            }
+        }
+        //capturing leaf node's contents
+        if (noOfIndexes<5){
+            noOfIndexes++;
+            newIndex.clear();
+            for (int i=0;i<cursor->size;i++){
+                newIndex.push_back(cursor->keys[i]);
+            }
+            indexes.push_back(newIndex);
+        }
+
+        //find startKey in leaf node
+        for (int i = 0; i < cursor->size; i++)
+        {
+            if (cursor->keys[i] >= startKey)
+            {
+                cout << "Found\n";
+                found=true;
+                recordList=cursor->ptrs[i].recordPtrs;
+                startPos=i;
+                break;
+            }
+        }
+        //if startKey not found in the leaf node, try next leaf node
+        if (!found){
+            //capture index node contents
+            
+            cursor=(Node *)cursor->ptrs[NODE_KEYS].nodePtr;
+            if (cursor!=NULL){
+                if (noOfIndexes<5){
+                    noOfIndexes++;
+                    newIndex.clear();
+                    for (int i=0;i<cursor->size;i++){
+                        newIndex.push_back(cursor->keys[i]);
+                    }
+                    indexes.push_back(newIndex);
+                }
+                recordList=cursor->ptrs[0].recordPtrs;
+                startPos=0;
+                cout << "Found\n";
+                found=true;
+            }
+        }
+        if (!found){
+            cout << "No records found in this range\n";
+        }
+        //get all records in the range [startKey,endKey]
+        //iterate through current index node
+        if (found){
+            for (int i=startPos+1;i<cursor->size;i++){
+                if (cursor->keys[i]<=endKey){
+                    recordList.insert(recordList.end(), cursor->ptrs[i].recordPtrs.begin(), cursor->ptrs[i].recordPtrs.end());
+                }
+                else {
+                    end=true;
+                    break;
+                }
+            }
+            if (!end){
+            //iterate through adjacent index nodes
+                cursor=(Node *)cursor->ptrs[NODE_KEYS].nodePtr;
+                int i=0;
+                if (noOfIndexes<5 && cursor!=NULL){
+                    noOfIndexes++;
+                    newIndex.clear();
+                    for (int i=0;i<cursor->size;i++){
+                        newIndex.push_back(cursor->keys[i]);
+                    }
+                    indexes.push_back(newIndex);
+                }
+                while(cursor!=NULL && cursor->keys[i]<=endKey){
+                    recordList.insert(recordList.end(), cursor->ptrs[i].recordPtrs.begin(), cursor->ptrs[i].recordPtrs.end());
+                    i++;
+                    if (i==cursor->size){
+                        cursor=(Node *)cursor->ptrs[NODE_KEYS].nodePtr;
+                        i=0;
+                        if (noOfIndexes<5 && cursor!=NULL){
+                            noOfIndexes++;
+                            newIndex.clear();
+                            for (int i=0;i<cursor->size;i++){
+                                newIndex.push_back(cursor->keys[i]);
+                            }
+                            indexes.push_back(newIndex);
+                        }
+                    }
+                }
+            }
+        }
+        
+    }
+    for (int i=0;i<indexes.size();i++){
+        cout << "Contents of index block " << i << ":" << endl;
+        for (int j=0;j<indexes[i].size();j++){
+            cout << indexes[i][j] << ", ";
+        }
+        cout << "\n";
+    }
+    return recordList;
 }
 
 // Insert Operation

@@ -38,7 +38,8 @@ class BPTree {
         ~BPTree();
         void insert(int key, byte* recordPtr);
         Node* search(int key);
-        void searchRange(int startKey, int endKey);
+        vector<byte *> searchRecords(int key);
+        vector<byte *> searchRange(int startKey, int endKey);
         void remove();
         void display(Node *);
         Node *getRoot();
