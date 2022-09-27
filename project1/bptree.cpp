@@ -4,13 +4,14 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
 #include "bptree.h"
 using namespace std;
 
 Node::Node(int i)
 {
     key = new int[i];
-    ptr = (void **)new Node *[i + 1];
+    ptr = (void **)new void *[i + 1];
 }
 
 BPTree::BPTree()
@@ -72,7 +73,9 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
         root = new Node(MAX);
         root->key[0] = x;
         // insert adress of record insertion point 1
-        root->ptr[0] = recordAdd;
+        vector<void *> v;
+        root->ptr[0] = &v;
+        v.push_back(recordAdd);
         root->IS_LEAF = true;
         root->size = 1;
     }

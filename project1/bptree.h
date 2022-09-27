@@ -3,7 +3,10 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
 using namespace std;
+
+// pointrt vector: a list of address of records wit the same key
 
 // BP node
 class Node
@@ -14,7 +17,6 @@ class Node
     friend class BPTree;
 
 public:
-    Node();
     Node(int);
 };
 
