@@ -136,6 +136,8 @@ BPTree read_record(void *memStart, int blkSize, int MAX)
             *(float *)startFreeSpace = stof(record[1]);
             startFreeSpace = startFreeSpace + 4;
             *(int *)startFreeSpace = stoi(record[2]);
+            //
+            cout << "address of record: " << startFreeSpace << endl;
             // adding to bptree, requires changing for final merge, change startFreeSpace to address of the record
             node.insert(stoi(record[2]), startFreeSpace, MAX);
             *BytesLeft = *BytesLeft - recordSize;
@@ -192,7 +194,25 @@ int main()
     cin >> c;
     while (c != -1)
     {
-        void *record = tree.search(c);
+        vector<void *> *record = (vector<void *> *)tree.search(c);
+        //
+        cout << "address of the vector received: " << record << endl;
+        cout << "vector size: " << record->size() << endl;
+        void *rAdd;
+        for (int i = 0; i < record->size(); i++)
+        {
+            rAdd = record->at(i);
+            rAdd = rAdd - 14;
+            for (int j = 0; j < 10; j++)
+            {
+                cout << (*(char *)(rAdd + j));
+            }
+            cout << endl
+                 << *(float *)(rAdd + 10) << endl
+                 << *(int *)(rAdd + 14) << endl
+                 << endl;
+        }
+        //
         if (record != NULL)
         {
             record = record - 14;
@@ -212,6 +232,7 @@ int main()
         cout << endl;
     }
 
+    delete record[];
     free(start);
     return 0;
 }

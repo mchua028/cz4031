@@ -73,9 +73,13 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
         root = new Node(MAX);
         root->key[0] = x;
         // insert adress of record insertion point 1
-        vector<void *> v;
-        root->ptr[0] = &v;
-        v.push_back(recordAdd);
+        vector<void *> *v = new vector<void *>;
+        root->ptr[0] = v;
+        v->push_back(recordAdd);
+        //
+        cout << "address of vector: " << &v << endl;
+        cout << "size of vector: " << v->size() << endl;
+        //
         root->IS_LEAF = true;
         root->size = 1;
     }
