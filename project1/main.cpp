@@ -232,7 +232,7 @@ int main()
         cout << endl;
     }
 
-    delete record[];
+    // free(record);
     free(start);
     return 0;
 }
