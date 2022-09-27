@@ -7,12 +7,6 @@
 #include "bptree.h"
 using namespace std;
 
-Node::Node()
-{
-    key = new int[MAX];
-    ptr = (void **)new Node *[MAX + 1];
-}
-
 Node::Node(int i)
 {
     key = new int[i];
@@ -169,14 +163,14 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
             }
             else
             {
-                insertInternal(newLeaf->key[0], parent, newLeaf);
+                insertInternal(newLeaf->key[0], parent, newLeaf, MAX);
             }
         }
     }
 }
 
 // Insert Operation
-void BPTree::insertInternal(int x, Node *cursor, Node *child)
+void BPTree::insertInternal(int x, Node *cursor, Node *child, int MAX)
 {
     if (cursor->size < MAX)
     {
@@ -244,7 +238,7 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
         }
         else
         {
-            insertInternal(cursor->key[cursor->size], findParent(root, cursor), newInternal);
+            insertInternal(cursor->key[cursor->size], findParent(root, cursor), newInternal, MAX);
         }
     }
 }

@@ -12,7 +12,7 @@ using namespace std;
 
 // Global variables
 int memSize = 100000000;
-int blkSize = 200;
+int blkSize = 500;
 
 // block structure declaration
 struct block

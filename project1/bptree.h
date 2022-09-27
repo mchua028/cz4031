@@ -5,8 +5,6 @@
 #include <sstream>
 using namespace std;
 
-int MAX = 3;
-
 // BP node
 class Node
 {
@@ -24,7 +22,7 @@ public:
 class BPTree
 {
     Node *root;
-    void insertInternal(int, Node *, Node *);
+    void insertInternal(int, Node *, Node *, int);
     Node *findParent(Node *, Node *);
 
 public:
