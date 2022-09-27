@@ -195,35 +195,23 @@ int main()
     while (c != -1)
     {
         vector<void *> *record = (vector<void *> *)tree.search(c);
-        //
-        cout << "address of the vector received: " << record << endl;
-        cout << "vector size: " << record->size() << endl;
+
         void *rAdd;
-        for (int i = 0; i < record->size(); i++)
-        {
-            rAdd = record->at(i);
-            rAdd = rAdd - 14;
-            for (int j = 0; j < 10; j++)
-            {
-                cout << (*(char *)(rAdd + j));
-            }
-            cout << endl
-                 << *(float *)(rAdd + 10) << endl
-                 << *(int *)(rAdd + 14) << endl
-                 << endl;
-        }
-        //
         if (record != NULL)
         {
-            record = record - 14;
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < record->size(); i++)
             {
-                cout << (*(char *)(record + i));
+                rAdd = record->at(i);
+                rAdd = rAdd - 14;
+                for (int j = 0; j < 10; j++)
+                {
+                    cout << (*(char *)(rAdd + j));
+                }
+                cout << endl
+                     << *(float *)(rAdd + 10) << endl
+                     << *(int *)(rAdd + 14) << endl
+                     << endl;
             }
-            cout << endl
-                 << *(float *)(record + 10) << endl
-                 << *(int *)(record + 14) << endl
-                 << endl;
         }
 
         cout << "enter the numVote to retrive the record or -1 to exit: " << endl

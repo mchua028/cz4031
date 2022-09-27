@@ -119,8 +119,9 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
             cursor->key[i] = x;
             cursor->size++;
             cursor->ptr[cursor->size] = cursor->ptr[cursor->size - 1]; // update the pointer to next leaf
-            cursor->ptr[i] = recordAdd;                                // insertion point
-            // cursor->ptr[cursor->size - 1] = NULL;
+            vector<void *> *v = new vector<void *>;                    // insertion point
+            cursor->ptr[i] = v;
+            v->push_back(recordAdd);
         }
         else // if the leaf node is full
         {
@@ -142,7 +143,12 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
                 virtualNode->ptr[j] = virtualNode->ptr[j - 1];
             }
             virtualNode->key[i] = x;         // slot in x
-            virtualNode->ptr[i] = recordAdd; // slot int recordaddress
+            virtualNode->ptr[i] = recordAdd; // slot int recordaddress insertion point
+
+            vector<void *> *v = new vector<void *>; // insertion point
+            virtualNode->ptr[i] = v;
+            v->push_back(recordAdd);
+
             newLeaf->IS_LEAF = true;
             cursor->size = (MAX + 1) / 2;
             newLeaf->size = MAX + 1 - (MAX + 1) / 2;        // splitting the node into 2 and deciding th sizes
