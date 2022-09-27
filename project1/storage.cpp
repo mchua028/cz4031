@@ -77,7 +77,7 @@ int Storage::getRecordSize() {
  */
 std::tuple<Record, std::unordered_set<int>> Storage::getRecord(std::byte* startPtr) {
     // Wrong starting pointer or not occupied
-    if (!this->isValidStartPtr(startPtr) || !occupied.count(startPtr)) {
+    if (!this->isValidStartPtr(startPtr) || this->available.count(startPtr)) {
         throw std::invalid_argument("Invalid starting pointer");
     }
 
@@ -144,7 +144,6 @@ std::byte* Storage::insertRecord(Record r) {
 
     // Update markings
     this->available.erase(this->headPtr);
-    this->occupied.insert(this->headPtr);
 
     // Copy the record to the storage and move the headPtr along
     std::memcpy(this->headPtr, &r.tconst, sizeof(r.tconst));
@@ -188,5 +187,4 @@ void Storage::deleteRecord(std::byte* startPtr) {
 
     // Update markings
     available.insert(startPtr);
-    occupied.erase(startPtr);
 }

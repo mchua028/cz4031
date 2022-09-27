@@ -19,8 +19,6 @@ class Storage {
         // Record size (bytes)
         int recordSize;
 
-        // Store the starting pointers of occupied spaces for records
-        std::unordered_set<std::byte*> occupied;
         // Store the starting pointers of available spaces for records 
         std::unordered_set<std::byte*> available;
 
