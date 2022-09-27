@@ -21,7 +21,7 @@ BPTree::BPTree()
 
 BPTree::~BPTree()
 {
-    // delete[] root;
+    delete (root);
 }
 
 // Search operation
@@ -82,6 +82,7 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
         //
         root->IS_LEAF = true;
         root->size = 1;
+        // delete v;
     }
     else // if root exsists
     {
