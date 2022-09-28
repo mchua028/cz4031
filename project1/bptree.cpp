@@ -309,8 +309,9 @@ Node *BPTree::findParent(Node *cursor, Node *child)
 }
 
 // Print the tree
-void BPTree::display(Node *cursor)
+void BPTree::display(Node *cursor, int level)
 {
+    cout <<"level: "<<level<<endl;
     if (cursor != NULL)
     {
         for (int i = 0; i < cursor->size; i++)
@@ -322,7 +323,7 @@ void BPTree::display(Node *cursor)
         {
             for (int i = 0; i < cursor->size + 1; i++)
             {
-                display((Node *)cursor->ptr[i]);
+                display((Node *)cursor->ptr[i],level+1);
             }
         }
     }

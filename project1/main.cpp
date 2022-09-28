@@ -192,7 +192,7 @@ int main()
         ptr = ptr + 18;
     }*/
 
-    tree.display(tree.getRoot());
+    tree.display(tree.getRoot(),0);
     int c;
     cout << "enter the numVote to retrive the record or -1 to exit: " << endl
          << endl;
