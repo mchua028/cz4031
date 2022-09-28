@@ -3,6 +3,7 @@
 #include <unordered_set>
 #include <vector>
 #include <tuple>
+#include <string>
 
 struct Record {
     char tconst[10];
@@ -14,13 +15,19 @@ class Storage {
     private:
         // Storage size (bytes)
         int size;
+        // Used storage size (bytes)
+        int usedSize;
+
         // Block size (bytes)
         int blockSize;
         // Record size (bytes)
         int recordSize;
 
+        // Number of blocks that contain at least 1 record
+        int usedBlocks;
+
         // Store the starting pointers of available spaces for records 
-        std::unordered_set<std::byte*> available;
+        std::unordered_set<std::byte*> availableRecordPtrs;
 
         // Pointer to the first byte of the storage
         std::byte *storagePtr;
@@ -28,12 +35,17 @@ class Storage {
         std::byte *headPtr;
         
         bool isValidStartPtr(std::byte* startPtr);
+        int getBlockOffset(std::byte* startPtr);
+        int getBlockIndex(std::byte* startPtr);
     public:
         Storage(int size, int blockSize, int recordSize);
         ~Storage();
         int getSize();
         int getBlockSize();
         int getRecordSize();
+        int getUsedBlocks();
+        int getUsedSize();
+        std::vector<std::string> getBlockContent(std::byte* startPtr);
         std::tuple<Record, std::unordered_set<int>> getRecord(std::byte* startPtr);
         std::tuple<std::vector<Record>, std::unordered_set<int>> getRecords(std::vector<std::byte *> startPtrs); 
         std::byte* insertRecord(Record r);
