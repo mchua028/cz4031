@@ -8,7 +8,7 @@ const int SIZE = 1e8;
 const int BLOCK_SIZE = 200;
 const int RECORD_SIZE = 18;
 
-void importData(Storage storage, const char* filename) {
+void importData(Storage &storage, const char* filename) {
     std::ifstream dataFile(filename);
     std::string line;
 
