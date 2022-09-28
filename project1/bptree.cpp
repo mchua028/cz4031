@@ -382,7 +382,7 @@ void BPTree::insert(int key, byte *recordAdd)
             while (key > virtualNode->keys[i] && i < NODE_KEYS) // i = index of first key larger than key
                 i++;
             //make space for new key
-            for (int j = NODE_KEYS; j > i; j--)
+            for (int j = NODE_KEYS+1; j > i; j--)
             {
                 virtualNode->keys[j] = virtualNode->keys[j - 1];
                 virtualNode->ptrs[j] = virtualNode->ptrs[j - 1];
@@ -467,13 +467,13 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
         while (x > virtualKey[i] && i < NODE_KEYS)
             i++;
         //make space for x
-        for (int j = NODE_KEYS; j > i; j--)
+        for (int j = NODE_KEYS+1; j > i; j--)
         {
             virtualKey[j] = virtualKey[j - 1];
         }
         virtualKey[i] = x;
         //make space for pointer to child
-        for (int j = NODE_KEYS + 1; j > i + 1; j--)
+        for (int j = NODE_KEYS + 2; j > i + 1; j--)
         {
             virtualPtr[j] = virtualPtr[j - 1];
         }
@@ -547,8 +547,9 @@ Node *BPTree::findParent(Node *cursor, Node *child)
 }
 
 // Print the tree
-void BPTree::display(Node *cursor)
+void BPTree::display(Node *cursor, int level)
 {
+    cout << "level: " << level<<endl;
     if (cursor != NULL)
     {
         for (int i = 0; i < cursor->size; i++)
@@ -560,7 +561,7 @@ void BPTree::display(Node *cursor)
         {
             for (int i = 0; i < cursor->size + 1; i++)
             {
-                display((Node *)cursor->ptrs[i].nodePtr);
+                display((Node *)cursor->ptrs[i].nodePtr,level+1);
             }
         }
     }

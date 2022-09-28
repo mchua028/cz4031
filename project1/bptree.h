@@ -41,6 +41,6 @@ class BPTree {
         vector<byte *> searchRecords(int key);
         vector<byte *> searchRange(int startKey, int endKey);
         void remove();
-        void display(Node *);
+        void display(Node *, int);
         Node *getRoot();
 };
