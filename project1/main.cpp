@@ -42,6 +42,7 @@ BPTree importData(Storage storage, BPTree bptree, const char* filename) {
         r=(Record *)recordPtrs[i];
 
         cout << r->tconst<<endl;
+        cout <<get<0>(storage.getRecord(recordPtrs[i])).tconst<< endl;
     }
     dataFile.close();
     return bptree;
