@@ -29,11 +29,18 @@ void importData(Storage &storage, const char* filename) {
     dataFile.close();
 } 
 
+void experiment1(Storage &storage) {
+    std::cout << "---Experiment 1---\n";
+
+    std::cout << "Number of blocks: " << storage.getUsedBlocks() << '\n';
+    std::cout << "Size of database: " << storage.getUsedSize() / 1000000.0 << " MB\n";
+}
 
 int main() {
     Storage storage(SIZE, BLOCK_SIZE, RECORD_SIZE);
-
     importData(storage, "data.tsv");
-    
+
+    experiment1(storage);
+
     return 0;
 }
