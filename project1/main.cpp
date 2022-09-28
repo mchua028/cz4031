@@ -11,7 +11,7 @@ const int SIZE = 1e8;
 const int BLOCK_SIZE = 200;
 const int RECORD_SIZE = 18;
 
-void importData(Storage storage, BPTree bptree, const char* filename) {
+BPTree importData(Storage storage, BPTree bptree, const char* filename) {
     std::ifstream dataFile(filename);
     std::string line;
 
@@ -28,11 +28,23 @@ void importData(Storage storage, BPTree bptree, const char* filename) {
 
         std::byte *recordPtr = storage.insertRecord(r);
         cout << "tconst: " <<r.tconst<<", avgrating: "<<r.averageRating<<", numVotes: "<<r.numVotes<<endl;
+        cout << "insert recordAdd: "<< recordPtr <<endl;
         bptree.insert(r.numVotes,recordPtr);
         bptree.display(bptree.getRoot(),0);
+        
     }
+    cout << "fetched record: "<<endl;
+    vector<byte *> recordPtrs=bptree.searchRecords(1807);
+    
+    for (int i=0;i<recordPtrs.size();i++){
+        Record *r;
+        cout << "fetch recordAdd:" << recordPtrs[i] <<endl;
+        r=(Record *)recordPtrs[i];
 
+        cout << r->tconst<<endl;
+    }
     dataFile.close();
+    return bptree;
 } 
 
 
@@ -40,8 +52,18 @@ int main() {
     Storage storage(SIZE, BLOCK_SIZE, RECORD_SIZE);
     BPTree bptree;
 
-    importData(storage, bptree,"./data2.tsv");
+    bptree=importData(storage, bptree,"./data2.tsv");
     // bptree.display(bptree.getRoot(),0);
+    vector<byte *> recordPtrs=bptree.searchRecords(154);
+    
+    for (int i=0;i<recordPtrs.size();i++){
+        Record r;
+        cout << "fetch recordAdd:" << recordPtrs[i] <<endl;
+        r=get<0>(storage.getRecord(recordPtrs[i]));
+
+        cout << r.tconst<<endl;
+    }
+
     
     return 0;
 }

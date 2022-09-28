@@ -1,5 +1,8 @@
 #include <cstring>
 #include <stdexcept>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 #include "storage.h"
 
 /**
@@ -165,7 +168,7 @@ std::byte* Storage::insertRecord(Record r) {
             this->headPtr = *(this->available.begin());
         }
     }
-
+    std::cout << "returned recordAdd: " <<startPtr <<std::endl;
     return startPtr;
 }
 

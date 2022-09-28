@@ -27,7 +27,7 @@ BPTree::BPTree()
 
 BPTree::~BPTree()
 {
-    // delete[] root;
+    // delete root;
 }
 
 // Search operation for insert
@@ -305,6 +305,7 @@ void BPTree::insert(int key, byte *recordAdd)
         root->keys[0] = key;
         // insert adress of record insertion point 1
         root->ptrs[0].recordPtrs.push_back(recordAdd);
+        cout << "recordAdd: "<<recordAdd <<endl;
         root->isLeaf = true;
         root->size = 1;
     }
