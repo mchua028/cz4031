@@ -137,9 +137,9 @@ BPTree read_record(void *memStart, int blkSize, int MAX)
             startFreeSpace = startFreeSpace + 4;
             *(int *)startFreeSpace = stoi(record[2]);
             //
-            cout << "address of record: " << startFreeSpace << endl;
+            // cout << "address of record: " << startFreeSpace << endl;
             // adding to bptree, requires changing for final merge, change startFreeSpace to address of the record
-            cout << "inserting key: " << stoi(record[2]) << endl;
+            // cout << "inserting key: " << stoi(record[2]) << endl;
             node.insert(stoi(record[2]), startFreeSpace, MAX);
             *BytesLeft = *BytesLeft - recordSize;
             *offSetToFreeSpaceInBlk = *offSetToFreeSpaceInBlk + recordSize;
@@ -166,6 +166,10 @@ int main()
     // calculate tree node size based on blksize so a node is bounded by blksize
     // x = max no of keys, 4(x) + 8(x+1) <= blksize
     int max = (blkSize - 8) / 12;
+    //
+    // max = 3;
+    //
+    // cout << "max: " << max << endl;
     BPTree tree = read_record(start, blkSize, max);
 
     /*cout << "blk id: " << *(int *)ptr << endl;
@@ -188,7 +192,7 @@ int main()
         ptr = ptr + 18;
     }*/
 
-    // tree.display(tree.getRoot());
+    tree.display(tree.getRoot());
     int c;
     cout << "enter the numVote to retrive the record or -1 to exit: " << endl
          << endl;

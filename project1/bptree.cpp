@@ -78,8 +78,8 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
         root->ptr[0] = v;
         v->push_back(recordAdd);
         //
-        cout << "address of vector: " << &v << endl;
-        cout << "size of vector: " << v->size() << endl;
+        // cout << "address of vector: " << &v << endl;
+        // cout << "size of vector: " << v->size() << endl;
         //
         root->IS_LEAF = true;
         root->size = 1;
@@ -110,12 +110,12 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
         {
             // check if key already exist,  // insertion point
             vector<void *> *V = (vector<void *> *)this->search(x);
-            cout << "from search: " << this->search(x) << endl;
-            // cout << "V size:" << V->size() << endl;
+            // cout << "from search: " << this->search(x) << endl;
+            //  cout << "V size:" << V->size() << endl;
 
             if (V != NULL)
             {
-                cout << "entered" << endl;
+                // cout << "entered" << endl;
                 V->push_back(recordAdd);
                 return;
             }
@@ -141,12 +141,12 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
         {
             // check if key already exist,  // insertion point
             vector<void *> *V = (vector<void *> *)this->search(x);
-            cout << "from search: " << this->search(x) << endl;
-            // cout << "V size:" << V->size() << endl;
+            // cout << "from search: " << this->search(x) << endl;
+            //  cout << "V size:" << V->size() << endl;
 
             if (V != NULL)
             {
-                cout << "entered" << endl;
+                // cout << "entered" << endl;
                 V->push_back(recordAdd);
                 return;
             }
