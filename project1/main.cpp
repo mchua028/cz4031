@@ -99,7 +99,7 @@ BPTree read_record(void *memStart, int blkSize, int MAX)
     void *startFreeSpace;
     BPTree node;
     // Read from the text file
-    ifstream MyReadFile("data2.tsv");
+    ifstream MyReadFile("data3.tsv");
 
     blkID = (int *)(memStart);
     isFull = (bool *)(memStart + sizeof(int));
@@ -167,7 +167,7 @@ int main()
     // x = max no of keys, 4(x) + 8(x+1) <= blksize
     int max = (blkSize - 8) / 12;
     //
-    // max = 3;
+    max = 3;
     //
     // cout << "max: " << max << endl;
     BPTree tree = read_record(start, blkSize, max);
@@ -192,7 +192,7 @@ int main()
         ptr = ptr + 18;
     }*/
 
-    tree.display(tree.getRoot(),0);
+    tree.display(tree.getRoot(), 0);
     int c;
     cout << "enter the numVote to retrive the record or -1 to exit: " << endl
          << endl;
