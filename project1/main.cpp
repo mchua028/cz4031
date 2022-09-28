@@ -139,6 +139,7 @@ BPTree read_record(void *memStart, int blkSize, int MAX)
             //
             cout << "address of record: " << startFreeSpace << endl;
             // adding to bptree, requires changing for final merge, change startFreeSpace to address of the record
+            cout << "inserting key: " << stoi(record[2]) << endl;
             node.insert(stoi(record[2]), startFreeSpace, MAX);
             *BytesLeft = *BytesLeft - recordSize;
             *offSetToFreeSpaceInBlk = *offSetToFreeSpaceInBlk + recordSize;

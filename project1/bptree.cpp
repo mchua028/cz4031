@@ -67,6 +67,7 @@ void *BPTree::search(int x)
 // Insert Operation
 void BPTree::insert(int x, void *recordAdd, int MAX)
 {
+
     if (root == NULL) // if no root
     {
         void *test;
@@ -107,6 +108,18 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
         }
         if (cursor->size < MAX) // if this leaf node is not full
         {
+            // check if key already exist,  // insertion point
+            vector<void *> *V = (vector<void *> *)this->search(x);
+            cout << "from search: " << this->search(x) << endl;
+            // cout << "V size:" << V->size() << endl;
+
+            if (V != NULL)
+            {
+                cout << "entered" << endl;
+                V->push_back(recordAdd);
+                return;
+            }
+
             int i = 0;
             while (x > cursor->key[i] && i < cursor->size) // find the index of the first key that is larger than x
                 i++;
@@ -119,12 +132,25 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
             cursor->key[i] = x;
             cursor->size++;
             cursor->ptr[cursor->size] = cursor->ptr[cursor->size - 1]; // update the pointer to next leaf
-            vector<void *> *v = new vector<void *>;                    // insertion point
+
+            vector<void *> *v = new vector<void *>;
             cursor->ptr[i] = v;
             v->push_back(recordAdd);
         }
         else // if the leaf node is full
         {
+            // check if key already exist,  // insertion point
+            vector<void *> *V = (vector<void *> *)this->search(x);
+            cout << "from search: " << this->search(x) << endl;
+            // cout << "V size:" << V->size() << endl;
+
+            if (V != NULL)
+            {
+                cout << "entered" << endl;
+                V->push_back(recordAdd);
+                return;
+            }
+
             Node *newLeaf = new Node(MAX);
             // int virtualNode[MAX + 1]; // create an array of size max+1 to store the keys, including the new key
             Node *virtualNode = new Node(MAX + 1); // create a virtualnode with 1 more key+pointer
@@ -142,9 +168,7 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
                 virtualNode->key[j] = virtualNode->key[j - 1];
                 virtualNode->ptr[j] = virtualNode->ptr[j - 1];
             }
-            virtualNode->key[i] = x;         // slot in x
-            virtualNode->ptr[i] = recordAdd; // slot int recordaddress insertion point
-
+            virtualNode->key[i] = x;                // slot in x
             vector<void *> *v = new vector<void *>; // insertion point
             virtualNode->ptr[i] = v;
             v->push_back(recordAdd);
