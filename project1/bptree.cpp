@@ -73,10 +73,11 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
         void *test;
         root = new Node(MAX);
         root->key[0] = x;
-        // insert adress of record insertion point 1
-        vector<void *> *v = new vector<void *>;
+        //
+        vector<void *> *v = new vector<void *>; // insertion point 1
         root->ptr[0] = v;
         v->push_back(recordAdd);
+        //
         //
         // cout << "address of vector: " << &v << endl;
         // cout << "size of vector: " << v->size() << endl;
@@ -108,15 +109,15 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
         }
         if (cursor->size < MAX) // if this leaf node is not full
         {
-            // check if key already exist,  // insertion point
+            // check if key already exist,
             vector<void *> *V = (vector<void *> *)this->search(x);
             // cout << "from search: " << this->search(x) << endl;
             //  cout << "V size:" << V->size() << endl;
 
-            if (V != NULL)
+            if (V != NULL) // if key already exist
             {
                 // cout << "entered" << endl;
-                V->push_back(recordAdd);
+                V->push_back(recordAdd); // insertion point
                 return;
             }
 
@@ -144,10 +145,10 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
             // cout << "from search: " << this->search(x) << endl;
             //  cout << "V size:" << V->size() << endl;
 
-            if (V != NULL)
+            if (V != NULL) // if key already exists
             {
                 // cout << "entered" << endl;
-                V->push_back(recordAdd);
+                V->push_back(recordAdd); // insertion point
                 return;
             }
 
@@ -168,11 +169,12 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
                 virtualNode->key[j] = virtualNode->key[j - 1];
                 virtualNode->ptr[j] = virtualNode->ptr[j - 1];
             }
-            virtualNode->key[i] = x;                // slot in x
+            virtualNode->key[i] = x; // slot in x
+            //
             vector<void *> *v = new vector<void *>; // insertion point
             virtualNode->ptr[i] = v;
             v->push_back(recordAdd);
-
+            //
             newLeaf->IS_LEAF = true;
             cursor->size = (MAX + 1) / 2;
             newLeaf->size = MAX + 1 - (MAX + 1) / 2;        // splitting the node into 2 and deciding th sizes
