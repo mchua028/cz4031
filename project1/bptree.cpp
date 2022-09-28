@@ -383,7 +383,7 @@ void BPTree::insert(int key, byte *recordAdd)
             while (key > virtualNode->keys[i] && i < NODE_KEYS) // i = index of first key larger than key
                 i++;
             //make space for new key
-            for (int j = NODE_KEYS+1; j > i; j--)
+            for (int j = NODE_KEYS; j > i; j--)
             {
                 virtualNode->keys[j] = virtualNode->keys[j - 1];
                 virtualNode->ptrs[j] = virtualNode->ptrs[j - 1];
@@ -412,6 +412,7 @@ void BPTree::insert(int key, byte *recordAdd)
                 newLeaf->ptrs[i] = virtualNode->ptrs[j]; // transfering keys into new node insertion point 4
             }
 
+            //if there is only cursor and newLeaf, just create a new root
             if (cursor == root)
             {
                 Node *newRoot = new Node();
@@ -422,7 +423,7 @@ void BPTree::insert(int key, byte *recordAdd)
                 newRoot->size = 1;
                 root = newRoot;
             }
-            else
+            else //there exist at least 2 levels, insert a new key into internal nodes
             {
                 insertInternal(newLeaf->keys[0], parent, newLeaf);
             }
@@ -433,6 +434,7 @@ void BPTree::insert(int key, byte *recordAdd)
 // Insert Operation
 void BPTree::insertInternal(int x, Node *cursor, Node *child)
 {
+    //there is still space in the parent node
     if (cursor->size < NODE_KEYS)
     {
         int i = 0;
@@ -450,6 +452,7 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
         cursor->ptrs[i + 1].nodePtr = child;
         cursor->size++;
     }
+    //no more space in the parent node, need to split the parent node
     else
     {
         Node *newInternal = new Node();
@@ -468,13 +471,13 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
         while (x > virtualKey[i] && i < NODE_KEYS)
             i++;
         //make space for x
-        for (int j = NODE_KEYS+1; j > i; j--)
+        for (int j = NODE_KEYS; j > i; j--)
         {
             virtualKey[j] = virtualKey[j - 1];
         }
         virtualKey[i] = x;
         //make space for pointer to child
-        for (int j = NODE_KEYS + 2; j > i + 1; j--)
+        for (int j = NODE_KEYS + 1; j > i + 1; j--)
         {
             virtualPtr[j] = virtualPtr[j - 1];
         }
@@ -508,28 +511,42 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
         if (cursor == root)
         {
             Node *newRoot = new Node();
-            newRoot->keys[0] = cursor->keys[cursor->size];
+            // newRoot->keys[0] = cursor->keys[cursor->size];
+            //get the smallest key found in the subtree under newInternal
+            newRoot->keys[0] = findSmallestKeyInSubtree(newInternal);
             newRoot->ptrs[0].nodePtr = cursor;
             newRoot->ptrs[1].nodePtr = newInternal;
             newRoot->isLeaf = false;
             newRoot->size = 1;
             root = newRoot;
         }
-        else
+        else // there are more than 2 levels in the current tree
         {
-            insertInternal(cursor->keys[cursor->size], findParent(root, cursor), newInternal);
+            insertInternal(findSmallestKeyInSubtree(newInternal), findParent(root, cursor), newInternal);
         }
     }
+}
+
+//find smallest key in subtree
+int BPTree::findSmallestKeyInSubtree(Node *cursor){
+    int smallestKey;
+    while (!cursor->isLeaf){
+        cursor=(Node *)cursor->ptrs[0].nodePtr;
+    }
+    smallestKey=cursor->keys[0];
+    return smallestKey;
 }
 
 // Find the parent
 Node *BPTree::findParent(Node *cursor, Node *child)
 {
     Node *parent;
+    //cursor cannot be a parent if it is a leaf node and parent of an internal node cannot be in the second last level
     if (cursor->isLeaf || ((Node *)cursor->ptrs[0].nodePtr)->isLeaf)
     {
         return NULL;
     }
+    //starting from root node, find the child node
     for (int i = 0; i < cursor->size + 1; i++)
     {
         if ((Node *)cursor->ptrs[i].nodePtr == child)
