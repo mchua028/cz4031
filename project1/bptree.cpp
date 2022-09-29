@@ -47,6 +47,7 @@ void BPTree::cleanUp(Node *cursor)
                 cleanUp((Node *)cursor->ptrs[i].nodePtr);
             }
         }
+        cout <<"deleting node starting with key "<<cursor->keys[0]<<endl;
         delete[] cursor->keys;
         delete[] cursor->ptrs;
         delete cursor;

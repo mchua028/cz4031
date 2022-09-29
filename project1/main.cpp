@@ -34,8 +34,15 @@ void importData(Storage &storage, BPTree &bptree, const char* filename) {
         bptree.display(bptree.getRoot(),0);
         
     }
-    cout <<"bptree structure: " << endl;
-    bptree.display(bptree.getRoot(),0);
+
+    vector<byte *> recordPtrs=bptree.searchRange(10,30);
+    for (int i=0;i<recordPtrs.size();i++){
+        Record r;
+        cout << "fetch recordAdd:" << recordPtrs[i] <<endl;
+        r=get<0>(storage.getRecord(recordPtrs[i]));
+
+        cout << r.tconst<<endl;
+    }
 
     dataFile.close();
 } 
@@ -69,13 +76,13 @@ int main() {
     Storage storage(SIZE, BLOCK_SIZE, RECORD_SIZE);
     BPTree bptree;
     
-    importData(storage, bptree, "data2.tsv");
+    importData(storage, bptree, "./data2.tsv");
 
     cout <<"Experiment 1:"<<endl;
     experiment1(storage);
 
-    cout <<"Experiment 3:"<<endl;
-    experiment3(storage, bptree, 1645);
+    // cout <<"Experiment 3:"<<endl;
+    // experiment3(storage, bptree, 1645);
 
     return 0;
 }
