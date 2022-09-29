@@ -117,14 +117,13 @@ vector<byte *> BPTree::searchRecords(int key)
         while (cursor->isLeaf == false)
         {
             //capturing index node's contents
-            if (noOfIndexes<5){
-                noOfIndexes++;
-                newIndex.clear();
-                for (int i=0;i<cursor->size;i++){
-                    newIndex.push_back(cursor->keys[i]);
-                }
-                indexes.push_back(newIndex);
+            noOfIndexes++;
+            newIndex.clear();
+            for (int i=0;i<cursor->size;i++){
+                newIndex.push_back(cursor->keys[i]);
             }
+            indexes.push_back(newIndex);
+            
             
 
             for (int i = 0; i < cursor->size; i++)
@@ -142,14 +141,12 @@ vector<byte *> BPTree::searchRecords(int key)
             }
         }
         //capturing leaf node's contents
-        if (noOfIndexes<5){
-            noOfIndexes++;
-            newIndex.clear();
-            for (int i=0;i<cursor->size;i++){
-                newIndex.push_back(cursor->keys[i]);
-            }
-            indexes.push_back(newIndex);
+        noOfIndexes++;
+        newIndex.clear();
+        for (int i=0;i<cursor->size;i++){
+            newIndex.push_back(cursor->keys[i]);
         }
+        indexes.push_back(newIndex);
 
         //find key in leaf node
         for (int i = 0; i < cursor->size; i++)
@@ -167,7 +164,8 @@ vector<byte *> BPTree::searchRecords(int key)
         }
         
     }
-    for (int i=0;i<indexes.size();i++){
+    cout << "Number of index blocks accessed: "<<indexes.size()<<endl;
+    for (int i=0;i<indexes.size() && i<5;i++){
         cout << "Contents of index block " << i << ":" << endl;
         for (int j=0;j<indexes[i].size();j++){
             cout << indexes[i][j] << ", ";
@@ -197,14 +195,12 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey){
         while (cursor->isLeaf == false)
         {
             //capturing index node's contents
-            if (noOfIndexes<5){
-                noOfIndexes++;
-                newIndex.clear();
-                for (int i=0;i<cursor->size;i++){
-                    newIndex.push_back(cursor->keys[i]);
-                }
-                indexes.push_back(newIndex);
+            noOfIndexes++;
+            newIndex.clear();
+            for (int i=0;i<cursor->size;i++){
+                newIndex.push_back(cursor->keys[i]);
             }
+            indexes.push_back(newIndex);
             
 
             for (int i = 0; i < cursor->size; i++)
@@ -222,14 +218,12 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey){
             }
         }
         //capturing leaf node's contents
-        if (noOfIndexes<5){
-            noOfIndexes++;
-            newIndex.clear();
-            for (int i=0;i<cursor->size;i++){
-                newIndex.push_back(cursor->keys[i]);
-            }
-            indexes.push_back(newIndex);
+        noOfIndexes++;
+        newIndex.clear();
+        for (int i=0;i<cursor->size;i++){
+            newIndex.push_back(cursor->keys[i]);
         }
+        indexes.push_back(newIndex);
 
         //find startKey in leaf node
         for (int i = 0; i < cursor->size; i++)
@@ -249,14 +243,13 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey){
             
             cursor=(Node *)cursor->ptrs[NODE_KEYS].nodePtr;
             if (cursor!=NULL){
-                if (noOfIndexes<5){
-                    noOfIndexes++;
-                    newIndex.clear();
-                    for (int i=0;i<cursor->size;i++){
-                        newIndex.push_back(cursor->keys[i]);
-                    }
-                    indexes.push_back(newIndex);
+                noOfIndexes++;
+                newIndex.clear();
+                for (int i=0;i<cursor->size;i++){
+                    newIndex.push_back(cursor->keys[i]);
                 }
+                indexes.push_back(newIndex);
+                
                 recordList=cursor->ptrs[0].recordPtrs;
                 startPos=0;
                 cout << "Found\n";
@@ -282,7 +275,7 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey){
             //iterate through adjacent index nodes
                 cursor=(Node *)cursor->ptrs[NODE_KEYS].nodePtr;
                 int i=0;
-                if (noOfIndexes<5 && cursor!=NULL){
+                if (cursor!=NULL){
                     noOfIndexes++;
                     newIndex.clear();
                     for (int i=0;i<cursor->size;i++){
@@ -296,7 +289,7 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey){
                     if (i==cursor->size){
                         cursor=(Node *)cursor->ptrs[NODE_KEYS].nodePtr;
                         i=0;
-                        if (noOfIndexes<5 && cursor!=NULL){
+                        if (cursor!=NULL){
                             noOfIndexes++;
                             newIndex.clear();
                             for (int i=0;i<cursor->size;i++){
@@ -310,7 +303,8 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey){
         }
         
     }
-    for (int i=0;i<indexes.size();i++){
+    cout << "Number of index blocks accessed: "<<indexes.size()<<endl;
+    for (int i=0;i<indexes.size() && i<5;i++){
         cout << "Contents of index block " << i << ":" << endl;
         for (int j=0;j<indexes[i].size();j++){
             cout << indexes[i][j] << ", ";

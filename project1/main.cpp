@@ -27,46 +27,13 @@ void importData(Storage &storage, BPTree &bptree, const char* filename) {
         buffer >> r.averageRating >> r.numVotes;
 
         std::byte *recordPtr = storage.insertRecord(r);
-        cout << "tconst: " <<r.tconst<<", avgrating: "<<r.averageRating<<", numVotes: "<<r.numVotes<<endl;
-        cout << "insert recordAdd: "<< recordPtr <<endl;
+        // cout << "tconst: " <<r.tconst<<", avgrating: "<<r.averageRating<<", numVotes: "<<r.numVotes<<endl;
+        // cout << "insert recordAdd: "<< recordPtr <<endl;
         //insert each record into bptree
         bptree.insert(r.numVotes,recordPtr);
         bptree.display(bptree.getRoot(),0);
-        std::cout <<"going to next line"<<endl;
-    }
-    std::cout <<"end of reading data"<<endl;
-
-    vector<byte *> recordPtrs=bptree.searchRecords(20);
-    
-    for (int i=0;i<recordPtrs.size();i++){
-        Record *r;
-        cout << "fetch recordAdd:" << recordPtrs[i] <<endl;
-        r=(Record *)recordPtrs[i];
-
-        cout << r->tconst<<endl;
-        // cout <<get<0>(storage.getRecord(recordPtrs[i])).tconst<< endl;
     }
 
-    recordPtrs=bptree.searchRecords(29);
-    
-    for (int i=0;i<recordPtrs.size();i++){
-        Record *r;
-        cout << "fetch recordAdd:" << recordPtrs[i] <<endl;
-        r=(Record *)recordPtrs[i];
-
-        cout << r->tconst<<endl;
-        // cout <<get<0>(storage.getRecord(recordPtrs[i])).tconst<< endl;
-    }
-
-    recordPtrs=bptree.searchRange(10,30);
-    for (int i=0;i<recordPtrs.size();i++){
-        Record *r;
-        cout << "fetch recordAdd:" << recordPtrs[i] <<endl;
-        r=(Record *)recordPtrs[i];
-
-        cout << r->tconst<<endl;
-        // cout <<get<0>(storage.getRecord(recordPtrs[i])).tconst<< endl;
-    }
 
     dataFile.close();
 } 
@@ -83,30 +50,121 @@ void experiment2(BPTree &bptree){
 }
 
 void experiment3(Storage &storage, BPTree &bptree, int key){
-    cout << "fetched records for key="<< key << ": " <<endl;
+    std::cout << "---Experiment 3---\n";
+    // std::cout << "fetched records for key="<< key << ": " <<endl;
     vector<byte *> recordPtrs=bptree.searchRecords(key);
-    
-    for (int i=0;i<recordPtrs.size();i++){
-        Record r;
-        cout << "fetch recordAdd:" << recordPtrs[i] <<endl;
-        r=get<0>(storage.getRecord(recordPtrs[i]));
 
-        cout << r.tconst<<endl;
+    vector<int> blockIndexes;
+    int avgNumVotes=0;
+    
+    //get all blocks accessed
+    for (int i=0;i<recordPtrs.size();i++){
+        byte *recordAdd=recordPtrs[i];
+        // Record r;
+        // std::cout << "fetch recordAdd:" << recordPtrs[i] <<endl;
+        // r=get<0>(storage.getRecord(recordPtrs[i]));
+
+        // std::cout << r.tconst<<endl;
         // cout <<get<0>(storage.getRecord(recordPtrs[i])).tconst<< endl;
+        Record r;
+        int blockIdx;
+        r=get<0>(storage.getRecord(recordAdd));
+        avgNumVotes+=r.numVotes;
+        blockIdx=get<1>(storage.getRecord(recordAdd));
+        if ( std::find(blockIndexes.begin(), blockIndexes.end(), blockIdx) == blockIndexes.end() ){
+            blockIndexes.push_back(blockIdx);
+        }
+        uintptr_t intPtr = reinterpret_cast<uintptr_t>(recordAdd);
+
+        if (((intPtr+RECORD_SIZE)/BLOCK_SIZE)>blockIdx){
+            if ( std::find(blockIndexes.begin(), blockIndexes.end(), blockIdx+1) == blockIndexes.end() ){
+                blockIndexes.push_back(blockIdx+1);
+            }
+        }
+
     }
+
+    //print contents of block
+    for (int i=0;i<blockIndexes.size() && i<5;i++){
+        cout <<"Contents of block "<<blockIndexes[i]<<":\n";
+        vector<string> contents=storage.getBlockContent(blockIndexes[i]);
+        for (int j=0;j<contents.size();j++){
+            cout << contents[i]<<", ";
+        }
+        cout <<"\n";
+    }
+
+    //calculate average numVotes
+    avgNumVotes/=recordPtrs.size();
+    cout <<"Average number of votes: "<<avgNumVotes<<endl;
+    
+
+}
+
+void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey){
+    std::cout << "---Experiment 4---\n";
+    vector<byte *> recordPtrs=bptree.searchRange(startKey,endKey);
+
+    vector<int> blockIndexes;
+    int avgNumVotes=0;
+
+    // int blockSize=BLOCK_SIZE;
+    // int recordSize=RECORD_SIZE;
+    
+    //get all blocks accessed
+    for (int i=0;i<recordPtrs.size();i++){
+        byte *recordAdd=recordPtrs[i];
+        // Record r;
+        // std::cout << "fetch recordAdd:" << recordPtrs[i] <<endl;
+        // r=get<0>(storage.getRecord(recordPtrs[i]));
+
+        // std::cout << r.tconst<<endl;
+        // cout <<get<0>(storage.getRecord(recordPtrs[i])).tconst<< endl;
+        Record r;
+        int blockIdx;
+        r=get<0>(storage.getRecord(recordAdd));
+        avgNumVotes+=r.numVotes;
+        blockIdx=get<1>(storage.getRecord(recordAdd));
+        if ( std::find(blockIndexes.begin(), blockIndexes.end(), blockIdx) == blockIndexes.end() ){
+            blockIndexes.push_back(blockIdx);
+        }
+        uintptr_t intPtr = reinterpret_cast<uintptr_t>(recordAdd);
+
+        if (((intPtr+RECORD_SIZE)/BLOCK_SIZE)>blockIdx){
+            if ( std::find(blockIndexes.begin(), blockIndexes.end(), blockIdx+1) == blockIndexes.end() ){
+                blockIndexes.push_back(blockIdx+1);
+            }
+        }
+
+    }
+
+    //print contents of block
+    for (int i=0;i<blockIndexes.size() && i<5;i++){
+        cout <<"Contents of block "<<blockIndexes[i]<<":\n";
+        vector<string> contents=storage.getBlockContent(blockIndexes[i]);
+        for (int j=0;j<contents.size();j++){
+            cout << contents[i]<<", ";
+        }
+        cout <<"\n";
+    }
+
+    //calculate average numVotes
+    avgNumVotes/=recordPtrs.size();
+    cout <<"Average number of votes: "<<avgNumVotes<<endl;
+
 }
 
 int main() {
     Storage storage(SIZE, BLOCK_SIZE, RECORD_SIZE);
     BPTree bptree;
     
-    importData(storage, bptree, "./data2.tsv");
+    importData(storage, bptree, "./data.tsv");
 
-    cout <<"Experiment 1:"<<endl;
     experiment1(storage);
 
-    // cout <<"Experiment 3:"<<endl;
-    // experiment3(storage, bptree, 1645);
+    experiment3(storage, bptree, 500);
+
+    experiment4(storage, bptree, 30000, 40000);
 
     return 0;
 }
