@@ -83,13 +83,15 @@ int Storage::getUsedSize() {
 }
 
 /**
- * @brief Get the content (tconsts) of the block where the pointer resides
+ * @brief Get the content (tconsts) of the block
  * 
- * @param startPtr 
+ * @param blockIdx 
  * @return Vector of tconst 
  */
-std::vector<std::string> Storage::getBlockContent(std::byte* startPtr) {
-    int blockIdx = this->getBlockIndex(startPtr); 
+std::vector<std::string> Storage::getBlockContent(int blockIdx) {
+    if (blockIdx < 0 || blockIdx >= this->size / this->blockSize) {
+        throw std::invalid_argument("Block index out of range");
+    }
 
     std::vector<std::string> content;
     std::byte *startBlockPtr = this->storagePtr + blockIdx * this->blockSize;
