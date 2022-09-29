@@ -46,8 +46,8 @@ class Storage {
         int getUsedBlocks();
         int getUsedSize();
         std::vector<std::string> getBlockContent(std::byte* startPtr);
-        std::tuple<Record, std::unordered_set<int>> getRecord(std::byte* startPtr);
-        std::tuple<std::vector<Record>, std::unordered_set<int>> getRecords(std::vector<std::byte *> startPtrs); 
+        std::tuple<Record, int> getRecord(std::byte* startPtr);
+        std::tuple<std::vector<Record>, std::vector<int>> getRecords(std::vector<std::byte *> startPtrs); 
         std::byte* insertRecord(Record r);
         void deleteRecord(std::byte* startPtr);
 };

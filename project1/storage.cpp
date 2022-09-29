@@ -138,10 +138,10 @@ int Storage::getRecordSize() {
  * @brief Get the record and the block indices that are accessed based on a starting pointer to the record
  * 
  * @param startPtr A pointer to the first byte of the record 
- * @return Tuple of (Record, unordered set of block indices that are accessed)
+ * @return Tuple of (Record, accessed block index)
  * @throw std::invalid_argument if the starting pointer is invalid
  */
-std::tuple<Record, std::unordered_set<int>> Storage::getRecord(std::byte* startPtr) {
+std::tuple<Record, int> Storage::getRecord(std::byte* startPtr) {
     // Wrong starting pointer or not occupied
     if (!this->isValidStartPtr(startPtr) || this->availableRecordPtrs.count(startPtr)) {
         throw std::invalid_argument("Invalid starting pointer");
@@ -159,39 +159,38 @@ std::tuple<Record, std::unordered_set<int>> Storage::getRecord(std::byte* startP
     std::memcpy(&r.numVotes, ptr, sizeof(r.numVotes));
     ptr += sizeof(r.numVotes);
 
-    int startBlockIdx = ( startPtr - this->storagePtr ) / this->blockSize;
-    int endBlockIdx = (ptr - this->storagePtr) / this->blockSize;
+    int blockIdx = this->getBlockIndex(startPtr);
 
-    std::unordered_set<int> blockIndices;
-    for (int i = startBlockIdx; i <= endBlockIdx; i++) {
-        blockIndices.insert(i);
-    }
-
-    return {r, blockIndices};
+    return {r, blockIdx};
 }
 
 /**
  * @brief Get the records and the block indices accessed based on starting pointers to records
  * 
  * @param startPtrs Vector of pointers to the first byte of records
- * @return Tuple of (vector of records, unordered set of block indices that are accessed)
+ * @return Tuple of (vector of records, vector of accessed block indices)
  */
-std::tuple<std::vector<Record>, std::unordered_set<int>> Storage::getRecords(std::vector<std::byte *> startPtrs) {
+std::tuple<std::vector<Record>, std::vector<int>> Storage::getRecords(std::vector<std::byte *> startPtrs) {
     std::vector<Record> records;
-    std::unordered_set<int> allBlockIndices;
+    std::vector<int> accessedBlockIndices;
+    std::unordered_set<int> visited;
 
     for (auto startPtr: startPtrs) {
         Record r;
-        std::unordered_set<int> rBlockIndices;
+        int blockIdx;
 
-        std::tie(r, rBlockIndices) = this->getRecord(startPtr);
+        std::tie(r, blockIdx) = this->getRecord(startPtr);
+
+        if (!visited.count(blockIdx)) {
+            accessedBlockIndices.push_back(blockIdx);
+            visited.insert(blockIdx);
+        }
 
         // Keep track of fetched records and block accesses
         records.push_back(r);
-        allBlockIndices.merge(rBlockIndices);
     }
 
-    return {records, allBlockIndices};
+    return {records, accessedBlockIndices};
 }
 
 /**
