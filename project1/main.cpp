@@ -32,16 +32,40 @@ void importData(Storage &storage, BPTree &bptree, const char* filename) {
         //insert each record into bptree
         bptree.insert(r.numVotes,recordPtr);
         bptree.display(bptree.getRoot(),0);
-        
+        std::cout <<"going to next line"<<endl;
+    }
+    std::cout <<"end of reading data"<<endl;
+
+    vector<byte *> recordPtrs=bptree.searchRecords(20);
+    
+    for (int i=0;i<recordPtrs.size();i++){
+        Record *r;
+        cout << "fetch recordAdd:" << recordPtrs[i] <<endl;
+        r=(Record *)recordPtrs[i];
+
+        cout << r->tconst<<endl;
+        // cout <<get<0>(storage.getRecord(recordPtrs[i])).tconst<< endl;
     }
 
-    vector<byte *> recordPtrs=bptree.searchRange(10,30);
+    recordPtrs=bptree.searchRecords(29);
+    
     for (int i=0;i<recordPtrs.size();i++){
-        Record r;
+        Record *r;
         cout << "fetch recordAdd:" << recordPtrs[i] <<endl;
-        r=get<0>(storage.getRecord(recordPtrs[i]));
+        r=(Record *)recordPtrs[i];
 
-        cout << r.tconst<<endl;
+        cout << r->tconst<<endl;
+        // cout <<get<0>(storage.getRecord(recordPtrs[i])).tconst<< endl;
+    }
+
+    recordPtrs=bptree.searchRange(10,30);
+    for (int i=0;i<recordPtrs.size();i++){
+        Record *r;
+        cout << "fetch recordAdd:" << recordPtrs[i] <<endl;
+        r=(Record *)recordPtrs[i];
+
+        cout << r->tconst<<endl;
+        // cout <<get<0>(storage.getRecord(recordPtrs[i])).tconst<< endl;
     }
 
     dataFile.close();
