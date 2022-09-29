@@ -13,9 +13,6 @@ class Node {
     private:
         int size;
         int *keys;
-        // If leaf, points to record bytes, else, points to nodes
-        // void *ptrs[NODE_KEYS + 1];  //some point to Node, some point to Record
-        // vector <void*> *ptrs;
         ptrs_struct *ptrs;
         bool isLeaf;
     
@@ -45,4 +42,5 @@ class BPTree {
         void remove(int x);
         void display(Node *, int);
         Node *getRoot();
+        void cleanUp(Node *);
 };

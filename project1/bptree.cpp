@@ -14,6 +14,11 @@ Node::Node(){
     ptrs = new ptrs_struct[NODE_KEYS+ 1];
 }
 
+Node::~Node(){
+    delete[] keys;
+    delete[] ptrs;
+}
+
 Node::Node(int i)
 {
     keys = new int[i];
@@ -27,8 +32,27 @@ BPTree::BPTree()
 
 BPTree::~BPTree()
 {
-    // delete root;
+    cleanUp(root);
 }
+
+//recursively delete nodes of bptree
+void BPTree::cleanUp(Node *cursor)
+{
+    if(cursor!=NULL)
+    {
+        if(!cursor->isLeaf)
+        {
+            for(int i = 0; i < cursor->size +1; i++)
+            {
+                cleanUp((Node *)cursor->ptrs[i].nodePtr);
+            }
+        }
+        delete[] cursor->keys;
+        delete[] cursor->ptrs;
+        delete cursor;
+    }
+}
+
 
 // Search operation for insert
 Node* BPTree::search(int key)

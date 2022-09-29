@@ -14,6 +14,8 @@
  */
 Storage::Storage(int size, int blockSize, int recordSize) {
     this->size = size;
+    this->usedSize = 0;
+
     this->blockSize = blockSize;
     this->recordSize = recordSize;
 
@@ -24,7 +26,7 @@ Storage::Storage(int size, int blockSize, int recordSize) {
 
     // Save the available record locations
     for (std::byte *ptr = this->storagePtr; ptr - this->storagePtr + 1 <= this->size; ptr += recordSize) {
-        this->available.insert(ptr);
+        this->availableRecordPtrs.insert(ptr);
     }
 }
 
@@ -40,8 +42,74 @@ Storage::~Storage() {
  * @return false otherwise
  */
 bool Storage::isValidStartPtr(std::byte* startPtr) {
-    // Multiple of recordSize and not out of bounds
-    return (startPtr - this->storagePtr) % this->recordSize == 0 && startPtr - this->storagePtr + 1 < this->size;
+    int offset = ((startPtr - this->storagePtr) % blockSize);
+    return (offset % recordSize) == 0 && // correct offset
+           (startPtr - this->storagePtr + 1) < this->size; // within size
+}
+
+/**
+ * @brief Get block offset of a pointer
+ * 
+ * @param startPtr
+ * @return Block offset
+ */
+int Storage::getBlockOffset(std::byte* startPtr) {
+    return (startPtr - this->storagePtr) % this->blockSize;
+}
+
+/**
+ * @brief Get block index of a pointer
+ * 
+ * @param startPtr 
+ * @return Block index 
+ */
+int Storage::getBlockIndex(std::byte* startPtr) {
+    return (startPtr - this->storagePtr) / this->blockSize;
+}
+
+/**
+ * @brief Get the number of used blocks
+ * 
+ * @return Number of used blocks 
+ */
+int Storage::getUsedBlocks() {
+    return this->usedBlocks;
+}
+
+/**
+ * @brief Get the space used by records (in bytes)
+ * 
+ * @return Size used (in bytes)
+ */
+int Storage::getUsedSize() {
+    return this->usedSize;
+}
+
+/**
+ * @brief Get the content (tconsts) of the block
+ * 
+ * @param blockIdx 
+ * @return Vector of tconst 
+ */
+std::vector<std::string> Storage::getBlockContent(int blockIdx) {
+    if (blockIdx < 0 || blockIdx >= this->size / this->blockSize) {
+        throw std::invalid_argument("Block index out of range");
+    }
+
+    std::vector<std::string> content;
+    std::byte *startBlockPtr = this->storagePtr + blockIdx * this->blockSize;
+    char tconst[10];
+
+    for (std::byte *p = startBlockPtr; p < startBlockPtr + this->blockSize; p += this->recordSize) {
+        // Skip empty byte
+        if ((int) *p == 0x00) {
+            continue;
+        }
+        std::memcpy(tconst, p, 10);
+        content.push_back(std::string((char *) tconst));
+    }
+
+    return content;
 }
 
 /**
@@ -75,12 +143,12 @@ int Storage::getRecordSize() {
  * @brief Get the record and the block indices that are accessed based on a starting pointer to the record
  * 
  * @param startPtr A pointer to the first byte of the record 
- * @return Tuple of (Record, unordered set of block indices that are accessed)
+ * @return Tuple of (Record, accessed block index)
  * @throw std::invalid_argument if the starting pointer is invalid
  */
-std::tuple<Record, std::unordered_set<int>> Storage::getRecord(std::byte* startPtr) {
+std::tuple<Record, int> Storage::getRecord(std::byte* startPtr) {
     // Wrong starting pointer or not occupied
-    if (!this->isValidStartPtr(startPtr) || this->available.count(startPtr)) {
+    if (!this->isValidStartPtr(startPtr) || this->availableRecordPtrs.count(startPtr)) {
         throw std::invalid_argument("Invalid starting pointer");
     }
 
@@ -96,39 +164,38 @@ std::tuple<Record, std::unordered_set<int>> Storage::getRecord(std::byte* startP
     std::memcpy(&r.numVotes, ptr, sizeof(r.numVotes));
     ptr += sizeof(r.numVotes);
 
-    int startBlockIdx = ( startPtr - this->storagePtr ) / this->blockSize;
-    int endBlockIdx = (ptr - this->storagePtr) / this->blockSize;
+    int blockIdx = this->getBlockIndex(startPtr);
 
-    std::unordered_set<int> blockIndices;
-    for (int i = startBlockIdx; i <= endBlockIdx; i++) {
-        blockIndices.insert(i);
-    }
-
-    return {r, blockIndices};
+    return {r, blockIdx};
 }
 
 /**
  * @brief Get the records and the block indices accessed based on starting pointers to records
  * 
  * @param startPtrs Vector of pointers to the first byte of records
- * @return Tuple of (vector of records, unordered set of block indices that are accessed)
+ * @return Tuple of (vector of records, vector of accessed block indices)
  */
-std::tuple<std::vector<Record>, std::unordered_set<int>> Storage::getRecords(std::vector<std::byte *> startPtrs) {
+std::tuple<std::vector<Record>, std::vector<int>> Storage::getRecords(std::vector<std::byte *> startPtrs) {
     std::vector<Record> records;
-    std::unordered_set<int> allBlockIndices;
+    std::vector<int> accessedBlockIndices;
+    std::unordered_set<int> visited;
 
     for (auto startPtr: startPtrs) {
         Record r;
-        std::unordered_set<int> rBlockIndices;
+        int blockIdx;
 
-        std::tie(r, rBlockIndices) = this->getRecord(startPtr);
+        std::tie(r, blockIdx) = this->getRecord(startPtr);
+
+        if (!visited.count(blockIdx)) {
+            accessedBlockIndices.push_back(blockIdx);
+            visited.insert(blockIdx);
+        }
 
         // Keep track of fetched records and block accesses
         records.push_back(r);
-        allBlockIndices.merge(rBlockIndices);
     }
 
-    return {records, allBlockIndices};
+    return {records, accessedBlockIndices};
 }
 
 /**
@@ -139,14 +206,19 @@ std::tuple<std::vector<Record>, std::unordered_set<int>> Storage::getRecords(std
  * @throw std::runtime_error if the storage is already full
  */
 std::byte* Storage::insertRecord(Record r) {
-    if (this->available.empty()) {
+    if (this->availableRecordPtrs.empty()) {
         throw std::runtime_error("Storage is already full");
     }
 
     std::byte* startPtr = this->headPtr;
 
+    // Record inserted to a new empty block
+    if (this->getBlockOffset(this->headPtr) == 0) {
+        this->usedBlocks++;
+    }
+
     // Update markings
-    this->available.erase(this->headPtr);
+    this->availableRecordPtrs.erase(this->headPtr);
 
     // Copy the record to the storage and move the headPtr along
     std::memcpy(this->headPtr, &r.tconst, sizeof(r.tconst));
@@ -158,17 +230,15 @@ std::byte* Storage::insertRecord(Record r) {
     std::memcpy(this->headPtr, &r.numVotes, sizeof(r.numVotes));
     this->headPtr += sizeof(r.numVotes);
 
-    // Update headPtr if pointing to an unavailable location
-    if (!this->available.count(this->headPtr)) {
-        // No available locations left, i.e. full
-        if (this->available.empty()) {
-            this->headPtr = NULL;
-        } else {
-            // Point to an available location
-            this->headPtr = *(this->available.begin());
-        }
+    // Point to the start of new block to accommodate the next insertion
+    if (this->getBlockOffset(this->headPtr) + this->recordSize > blockSize) {
+        this->headPtr = this->storagePtr + this->usedBlocks * this->blockSize;
     }
     std::cout << "returned recordAdd: " <<startPtr <<std::endl;
+
+    // Update used size
+    this->usedSize += this->recordSize;
+
     return startPtr;
 }
 
@@ -180,7 +250,7 @@ std::byte* Storage::insertRecord(Record r) {
  * @throw std::invalid_argument if the starting pointer is invalid
  */
 void Storage::deleteRecord(std::byte* startPtr) {
-    if (!this->isValidStartPtr(startPtr) || this->available.count(startPtr)) {
+    if (!this->isValidStartPtr(startPtr) || this->availableRecordPtrs.count(startPtr)) {
         throw std::invalid_argument("Invalid starting pointer");
     }
 
@@ -189,5 +259,10 @@ void Storage::deleteRecord(std::byte* startPtr) {
     }
 
     // Update markings
-    available.insert(startPtr);
+    this->availableRecordPtrs.insert(startPtr);
+
+    // Clear contents
+    std::memset(startPtr, 0x00, this->recordSize);
+    // Update used size
+    this->usedSize -= this->recordSize;
 }
