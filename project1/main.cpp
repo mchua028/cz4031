@@ -58,50 +58,30 @@ void experiment2(BPTree &bptree, int NODE_KEYS){
 
 void experiment3(Storage &storage, BPTree &bptree, int key){
     std::cout << "---Experiment 3---\n";
-    // std::cout << "fetched records for key="<< key << ": " <<endl;
-    vector<byte *> recordPtrs=bptree.searchRecords(key);
 
-    vector<int> blockIndexes;
-    float avgRating=0;
+    vector<byte *> recordPtrs = bptree.searchRecords(key);
+
+    vector<Record> records;
+    vector<int> blockIndices;
+    std::tie(records, blockIndices) = storage.getRecords(recordPtrs);
+
+    float totalAverageRating = 0;
+    for (Record r: records) {
+        totalAverageRating += r.averageRating;
+    }
     
-    //get all blocks accessed
-    for (int i=0;i<recordPtrs.size();i++){
-        byte *recordAdd=recordPtrs[i];
-        Record r;
-        int blockIdx;
-        r=get<0>(storage.getRecord(recordAdd));
-        avgRating+=r.averageRating;
-        blockIdx=get<1>(storage.getRecord(recordAdd));
-        cout << "block index:"<<blockIdx<<endl;
-        if ( std::find(blockIndexes.begin(), blockIndexes.end(), blockIdx) == blockIndexes.end() ){
-            blockIndexes.push_back(blockIdx);
-        }
-        uintptr_t intPtr = reinterpret_cast<uintptr_t>(recordAdd);
-        uintptr_t storagePtr = reinterpret_cast<uintptr_t>(storage.getStoragePtr());
+    cout << "Number of blocks accessed:" << blockIndices.size() << endl;
 
-        if ((intPtr+RECORD_SIZE-1-storagePtr+1)>BLOCK_SIZE){
-            if ( std::find(blockIndexes.begin(), blockIndexes.end(), blockIdx+1) == blockIndexes.end() ){
-                blockIndexes.push_back(blockIdx+1);
-            }
+    // Print the content of the first 5 accessed blocks
+    for (int i = 0; i < min((int) blockIndices.size(), 5); i++) {
+        auto blockContent = storage.getBlockContent(blockIndices[i]);
+        for (auto tconst: blockContent) {
+            cout << tconst << ", ";
         }
-
+        cout << '\n';
     }
 
-    cout <<"Number of blocks accessed:"<<blockIndexes.size()<<endl;
-    //print contents of block
-    for (int i=0;i<blockIndexes.size() && i<5;i++){
-        cout <<"Contents of block "<<blockIndexes[i]<<":\n";
-        vector<string> contents=storage.getBlockContent(blockIndexes[i]);
-        for (int j=0;j<contents.size();j++){
-            cout << contents[j]<<", ";
-        }
-        cout <<"\n";
-    }
-    //calculate average rating
-    avgRating/=recordPtrs.size();
-    cout <<"Average rating: "<<avgRating<<endl;
-    
-
+    cout <<"Average rating: "<< totalAverageRating / recordPtrs.size() <<endl;
 }
 
 void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey, int NODE_KEYS){
