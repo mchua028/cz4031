@@ -1,217 +1,329 @@
+// Searching on a B+ tree in C++
+
 #include <climits>
 #include <fstream>
-#include <sstream>
 #include <iostream>
-#include <cstdlib>
-#include <vector>
-#include <string>
-#include <cstring>
-#include "bptree.h"
-#include "bptree.cpp"
+#include <sstream>
 using namespace std;
+int MAX = 3;
 
-// Global variables
-int memSize = 100000000;
-int blkSize = 200;
-
-// block structure declaration
-struct block
-{ // header 14 Bytes
-    int ID;
-    int byteLeft;
-    int blockEnd;
-    bool isFull;
-    bool inUsed;
-
-    // manually update blkSize here
-    char data[200 - sizeof(int) * 3 - sizeof(bool) - 3];
-};
-
-struct record
-{ // size = 18 Bytes
-    char tconst[10];
-    float averageRating;
-    int numVotes;
-};
-
-void *init_disk()
+// BP node
+class Node
 {
-    cout << "................Initializing Disk................" << endl
-         << endl;
+    bool IS_LEAF;
+    int *key, size;
+    Node **ptr;
+    friend class BPTree;
 
-    // allocating memory for the "Disk"
-    cout << "..........Assigning memory for the Disk.........." << endl
-         << endl;
-    void *memStart = malloc(memSize);
+public:
+    Node();
+};
 
-    // assigning block header for every block
-    cout << ".............Initializing the Blocks............." << endl
-         << endl;
-    cout << "...............Block size:" << blkSize << " Bytes.............." << endl
-         << endl;
-    void *ptr = memStart;
+// BP tree
+class BPTree
+{
+    Node *root;
+    void insertInternal(int, Node *, Node *);
+    Node *findParent(Node *, Node *);
 
-    // assigning header to the blocks
-    for (int i = 0; i < memSize / blkSize; i++)
-    {
-        // Block ID
-        *(int *)ptr = i;
-        // isFull flag
-        *(bool *)(ptr + sizeof(int)) = false;
-        // inUse flag
-        *(bool *)(ptr + sizeof(int) + sizeof(bool)) = false;
-        // offset to start of free space in block
-        *(int *)(ptr + sizeof(int) + sizeof(bool) * 2) = sizeof(int) * 3 + sizeof(bool) * 2;
-        // Byte left in block
-        *(int *)(ptr + sizeof(int) * 2 + sizeof(bool) * 2) = blkSize - sizeof(int) * 3 - sizeof(bool) * 2;
-        // address of start of data
-        for (int j = 0; j < blkSize - sizeof(int) * 3 - sizeof(bool) * 2; j++)
-        {
-            *(char *)(ptr + sizeof(int) * 3 + sizeof(bool) * 2 + j) = '\0';
-        }
+public:
+    BPTree();
+    void search(int);
+    void insert(int);
+    void display(Node *);
+    Node *getRoot();
+};
 
-        ptr = ptr + blkSize;
-    }
-
-    cout << "............Disk initialization done!............"
-         << endl
-         << endl
-         << "............" << memSize / blkSize << " Blocks initialized............" << endl;
-    return memStart;
+Node::Node()
+{
+    key = new int[MAX];
+    ptr = new Node *[MAX + 1];
 }
 
-BPTree read_record(void *memStart, int blkSize, int MAX)
+BPTree::BPTree()
 {
+    root = NULL;
+}
 
-    // Create a text string, which is used to output the text file
-    string line;
-    vector<string> record;
-    string field, temp;
-    char tconst[10];
-    float averageRating;
-    int numVotes;
-    int recordSize = sizeof(tconst) + sizeof(averageRating) + sizeof(numVotes);
-    int *blkID;
-    bool *isFull;
-    bool *inUse;
-    int *offSetToFreeSpaceInBlk;
-    int *BytesLeft;
-    void *startFreeSpace;
-    BPTree node;
-    // Read from the text file
-    ifstream MyReadFile("data2.tsv");
-
-    blkID = (int *)(memStart);
-    isFull = (bool *)(memStart + sizeof(int));
-    inUse = (bool *)(memStart + sizeof(bool) + sizeof(int));
-    offSetToFreeSpaceInBlk = (int *)(memStart + sizeof(bool) * 2 + sizeof(int));
-    BytesLeft = (int *)(memStart + sizeof(bool) * 2 + sizeof(int) * 2);
-    startFreeSpace = (memStart + sizeof(bool) * 2 + sizeof(int) * 3);
-    // Use a while loop together with the getline() function to read the file line by line
-    // skip first line using 1 read
-    getline(MyReadFile, line);
-    while (getline(MyReadFile, line))
+// Search operation
+void BPTree::search(int x)
+{
+    if (root == NULL)
     {
-
-        record.clear();
-        stringstream s(line);
-        while (getline(s, field, '\t'))
+        cout << "Tree is empty\n";
+    }
+    else
+    {
+        Node *cursor = root;
+        while (cursor->IS_LEAF == false)
         {
-
-            // add all the column data
-            // of a row to a vector
-            record.push_back(field);
-        }
-
-        // Inserting record into memory
-        if (*BytesLeft >= recordSize)
-        {
-            *inUse = true;
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < cursor->size; i++)
             {
-                *(char *)(startFreeSpace + i) = record[0][i];
+                if (x < cursor->key[i])
+                {
+                    cursor = cursor->ptr[i];
+                    break;
+                }
+                if (i == cursor->size - 1)
+                {
+                    cursor = cursor->ptr[i + 1];
+                    break;
+                }
             }
-            // memcpy(startFreeSpace, &(record[0]), 10);
-            startFreeSpace = startFreeSpace + 10;
-            *(float *)startFreeSpace = stof(record[1]);
-            startFreeSpace = startFreeSpace + 4;
-            *(int *)startFreeSpace = stoi(record[2]);
-            // adding to bptree, requires changing for final merge, change startFreeSpace to address of the record
-            node.insert(stoi(record[2]), startFreeSpace, MAX);
-            *BytesLeft = *BytesLeft - recordSize;
-            *offSetToFreeSpaceInBlk = *offSetToFreeSpaceInBlk + recordSize;
-            // break;
+        }
+        for (int i = 0; i < cursor->size; i++)
+        {
+            if (cursor->key[i] == x)
+            {
+                cout << "Found\n";
+                return;
+            }
+        }
+        cout << "Not found\n";
+    }
+}
 
-            startFreeSpace = startFreeSpace + 4;
+// Insert Operation
+void BPTree::insert(int x)
+{
+    if (root == NULL)
+    {
+        root = new Node;
+        root->key[0] = x;
+        root->IS_LEAF = true;
+        root->size = 1;
+    }
+    else
+    {
+        Node *cursor = root;
+        Node *parent;
+        while (cursor->IS_LEAF == false)
+        {
+            parent = cursor;
+            for (int i = 0; i < cursor->size; i++)
+            {
+                if (x < cursor->key[i])
+                {
+                    cursor = cursor->ptr[i];
+                    break;
+                }
+                if (i == cursor->size - 1)
+                {
+                    cursor = cursor->ptr[i + 1];
+                    break;
+                }
+            }
+        }
+        if (cursor->size < MAX)
+        {
+            int i = 0;
+            while (x > cursor->key[i] && i < cursor->size)
+                i++;
+            for (int j = cursor->size; j > i; j--)
+            {
+                cursor->key[j] = cursor->key[j - 1];
+            }
+            cursor->key[i] = x;
+            cursor->size++;
+            cursor->ptr[cursor->size] = cursor->ptr[cursor->size - 1];
+            cursor->ptr[cursor->size - 1] = NULL;
         }
         else
         {
-            return node;
+            Node *newLeaf = new Node;
+            int virtualNode[MAX + 1];
+            for (int i = 0; i < MAX; i++)
+            {
+                virtualNode[i] = cursor->key[i];
+            }
+            int i = 0, j;
+            while (x > virtualNode[i] && i < MAX)
+                i++;
+            for (int j = MAX + 1; j > i; j--)
+            {
+                virtualNode[j] = virtualNode[j - 1];
+            }
+            virtualNode[i] = x;
+            newLeaf->IS_LEAF = true;
+            cursor->size = (MAX + 1) / 2;
+            newLeaf->size = MAX + 1 - (MAX + 1) / 2;
+            cursor->ptr[cursor->size] = newLeaf;
+            newLeaf->ptr[newLeaf->size] = cursor->ptr[MAX];
+            cursor->ptr[MAX] = NULL;
+            for (i = 0; i < cursor->size; i++)
+            {
+                cursor->key[i] = virtualNode[i];
+            }
+            for (i = 0, j = cursor->size; i < newLeaf->size; i++, j++)
+            {
+                newLeaf->key[i] = virtualNode[j];
+            }
+            if (cursor == root)
+            {
+                Node *newRoot = new Node;
+                newRoot->key[0] = newLeaf->key[0];
+                newRoot->ptr[0] = cursor;
+                newRoot->ptr[1] = newLeaf;
+                newRoot->IS_LEAF = false;
+                newRoot->size = 1;
+                root = newRoot;
+            }
+            else
+            {
+                insertInternal(newLeaf->key[0], parent, newLeaf);
+            }
         }
     }
+}
 
-    // Close the file
-    MyReadFile.close();
-    return node;
+// Insert Operation
+void BPTree::insertInternal(int x, Node *cursor, Node *child)
+{
+    if (cursor->size < MAX)
+    {
+        int i = 0;
+        while (x > cursor->key[i] && i < cursor->size)
+            i++;
+        for (int j = cursor->size; j > i; j--)
+        {
+            cursor->key[j] = cursor->key[j - 1];
+        }
+        for (int j = cursor->size + 1; j > i + 1; j--)
+        {
+            cursor->ptr[j] = cursor->ptr[j - 1];
+        }
+        cursor->key[i] = x;
+        cursor->size++;
+        cursor->ptr[i + 1] = child;
+    }
+    else
+    {
+        Node *newInternal = new Node;
+        int virtualKey[MAX + 1];
+        Node *virtualPtr[MAX + 2];
+        for (int i = 0; i < MAX; i++)
+        {
+            virtualKey[i] = cursor->key[i];
+        }
+        for (int i = 0; i < MAX + 1; i++)
+        {
+            virtualPtr[i] = cursor->ptr[i];
+        }
+        int i = 0, j;
+        while (x > virtualKey[i] && i < MAX)
+            i++;
+        for (int j = MAX + 1; j > i; j--)
+        {
+            virtualKey[j] = virtualKey[j - 1];
+        }
+        virtualKey[i] = x;
+        for (int j = MAX + 2; j > i + 1; j--)
+        {
+            virtualPtr[j] = virtualPtr[j - 1];
+        }
+        virtualPtr[i + 1] = child;
+        newInternal->IS_LEAF = false;
+        cursor->size = (MAX + 1) / 2;
+        newInternal->size = MAX - (MAX + 1) / 2;
+        for (i = 0, j = cursor->size + 1; i < newInternal->size; i++, j++)
+        {
+            newInternal->key[i] = virtualKey[j];
+        }
+        for (i = 0, j = cursor->size + 1; i < newInternal->size + 1; i++, j++)
+        {
+            newInternal->ptr[i] = virtualPtr[j];
+        }
+        if (cursor == root)
+        {
+            Node *newRoot = new Node;
+            newRoot->key[0] = cursor->key[cursor->size];
+            newRoot->ptr[0] = cursor;
+            newRoot->ptr[1] = newInternal;
+            newRoot->IS_LEAF = false;
+            newRoot->size = 1;
+            root = newRoot;
+        }
+        else
+        {
+            insertInternal(cursor->key[cursor->size], findParent(root, cursor), newInternal);
+        }
+    }
+}
+
+// Find the parent
+Node *BPTree::findParent(Node *cursor, Node *child)
+{
+    Node *parent;
+    if (cursor->IS_LEAF || (cursor->ptr[0])->IS_LEAF)
+    {
+        return NULL;
+    }
+    for (int i = 0; i < cursor->size + 1; i++)
+    {
+        if (cursor->ptr[i] == child)
+        {
+            parent = cursor;
+            return parent;
+        }
+        else
+        {
+            parent = findParent(cursor->ptr[i], child);
+            if (parent != NULL)
+                return parent;
+        }
+    }
+    return parent;
+}
+
+// Print the tree
+void BPTree::display(Node *cursor)
+{
+    if (cursor != NULL)
+    {
+        for (int i = 0; i < cursor->size; i++)
+        {
+            cout << cursor->key[i] << " ";
+        }
+        cout << "\n";
+        if (cursor->IS_LEAF != true)
+        {
+            for (int i = 0; i < cursor->size + 1; i++)
+            {
+                display(cursor->ptr[i]);
+            }
+        }
+    }
+}
+
+// Get the root
+Node *BPTree::getRoot()
+{
+    return root;
 }
 
 int main()
 {
-    void *start = init_disk();
-    void *ptr = start;
-    // ptr = memStart;
-    // calculate tree node size based on blksize so a node is bounded by blksize
-    // x = max no of keys, 4(x) + 8(x+1) <= blksize
-    int max = (blkSize - 8) / 12;
-    BPTree tree = read_record(start, blkSize, max);
+    BPTree node;
+    node.insert(1645);
+    node.insert(198);
+    node.insert(1342);
+    node.insert(120);
+    node.insert(2127);
+    node.insert(115);
+    node.insert(652);
+    node.insert(1807);
+    node.insert(154);
+    node.insert(6018);
+    node.insert(262);
+    node.insert(10287);
+    node.insert(1572);
+    node.insert(4599);
+    node.insert(817);
+    node.insert(1200);
+    node.insert(241);
+    node.insert(478);
+    node.insert(20);
+    node.display(node.getRoot());
 
-    /*cout << "blk id: " << *(int *)ptr << endl;
-    cout << "isFull: " << *(bool *)(ptr + 4) << endl;
-    cout << "inUse: " << *(bool *)(ptr + 5) << endl;
-    cout << "offset to start of free space: " << *(int *)(ptr + 6) << endl;
-    cout << "Bytes left in block: " << *(int *)(ptr + 10) << endl;
-    ptr = ptr + 14;
-    for (int i = 0; i < 30; i++)
-    {
-
-        for (int i = 0; i < 10; i++)
-        {
-            cout << (*(char *)(ptr + i));
-        }
-        cout << endl
-             << *(float *)(ptr + 10) << endl
-             << *(int *)(ptr + 14) << endl
-             << endl;
-        ptr = ptr + 18;
-    }*/
-
-    // tree.display(tree.getRoot());
-    int c;
-    cout << "enter the numVote to retrive the record or -1 to exit: " << endl
-         << endl;
-    cin >> c;
-    while (c != -1)
-    {
-        void *record = tree.search(c);
-        if (record != NULL)
-        {
-            record = record - 14;
-            for (int i = 0; i < 10; i++)
-            {
-                cout << (*(char *)(record + i));
-            }
-            cout << endl
-                 << *(float *)(record + 10) << endl
-                 << *(int *)(record + 14) << endl
-                 << endl;
-        }
-
-        cout << "enter the numVote to retrive the record or -1 to exit: " << endl
-             << endl;
-        cin >> c;
-        cout << endl;
-    }
-
-    free(start);
-    return 0;
+    node.search(15);
 }
