@@ -9,12 +9,14 @@
 #include "bptree.h"
 using namespace std;
 
-Node::Node(){
+Node::Node()
+{
     keys = new int[NODE_KEYS];
-    ptrs = new ptrs_struct[NODE_KEYS+ 1];
+    ptrs = new ptrs_struct[NODE_KEYS + 1];
 }
 
-Node::~Node(){
+Node::~Node()
+{
     delete[] keys;
     delete[] ptrs;
 }
@@ -35,29 +37,28 @@ BPTree::~BPTree()
     cleanUp(root);
 }
 
-//recursively delete nodes of bptree
+// recursively delete nodes of bptree
 void BPTree::cleanUp(Node *cursor)
 {
-    cout <<"Cleaning up bptree"<<endl;
-    if(cursor!=NULL)
+    cout << "Cleaning up bptree" << endl;
+    if (cursor != NULL)
     {
-        if(!cursor->isLeaf)
+        if (!cursor->isLeaf)
         {
-            for(int i = 0; i < cursor->size +1; i++)
+            for (int i = 0; i < cursor->size + 1; i++)
             {
                 cleanUp((Node *)cursor->ptrs[i].nodePtr);
             }
         }
-        cout <<"deleting node starting with key "<<cursor->keys[0]<<endl;
+        cout << "deleting node starting with key " << cursor->keys[0] << endl;
         delete[] cursor->keys;
         delete[] cursor->ptrs;
         delete cursor;
     }
 }
 
-
 // Search operation for insert
-Node* BPTree::search(int key)
+Node *BPTree::search(int key)
 {
     if (root == NULL)
     {
@@ -67,7 +68,7 @@ Node* BPTree::search(int key)
     else
     {
         Node *cursor = root;
-        //find leaf node which may contain key
+        // find leaf node which may contain key
         while (cursor->isLeaf == false)
         {
             for (int i = 0; i < cursor->size; i++)
@@ -84,7 +85,7 @@ Node* BPTree::search(int key)
                 }
             }
         }
-        //find key in leaf node
+        // find key in leaf node
         for (int i = 0; i < cursor->size; i++)
         {
             if (cursor->keys[i] == key)
@@ -98,13 +99,12 @@ Node* BPTree::search(int key)
     }
 }
 
-
 // Search operation for a key
 vector<byte *> BPTree::searchRecords(int key)
 {
-    bool found=false;
+    bool found = false;
     vector<vector<int>> indexes;
-    int noOfIndexes=0;
+    int noOfIndexes = 0;
     vector<int> newIndex;
     vector<byte *> recordList;
     if (root == NULL)
@@ -114,18 +114,17 @@ vector<byte *> BPTree::searchRecords(int key)
     else
     {
         Node *cursor = root;
-        //find leaf node which may contain key
+        // find leaf node which may contain key
         while (cursor->isLeaf == false)
         {
-            //capturing index node's contents
+            // capturing index node's contents
             noOfIndexes++;
             newIndex.clear();
-            for (int i=0;i<cursor->size;i++){
+            for (int i = 0; i < cursor->size; i++)
+            {
                 newIndex.push_back(cursor->keys[i]);
             }
             indexes.push_back(newIndex);
-            
-            
 
             for (int i = 0; i < cursor->size; i++)
             {
@@ -141,49 +140,53 @@ vector<byte *> BPTree::searchRecords(int key)
                 }
             }
         }
-        //capturing leaf node's contents
+        // capturing leaf node's contents
         noOfIndexes++;
         newIndex.clear();
-        for (int i=0;i<cursor->size;i++){
+        for (int i = 0; i < cursor->size; i++)
+        {
             newIndex.push_back(cursor->keys[i]);
         }
         indexes.push_back(newIndex);
 
-        //find key in leaf node
+        // find key in leaf node
         for (int i = 0; i < cursor->size; i++)
         {
             if (cursor->keys[i] == key)
             {
                 cout << "Found\n";
-                found=true;
-                recordList=cursor->ptrs[i].recordPtrs;
+                found = true;
+                recordList = cursor->ptrs[i].recordPtrs;
                 break;
             }
         }
-        if (!found){
+        if (!found)
+        {
             cout << "Not found\n";
         }
-        
     }
-    cout << "Number of index blocks accessed: "<<indexes.size()<<endl;
-    for (int i=0;i<indexes.size() && i<5;i++){
+    cout << "Number of index blocks accessed: " << indexes.size() << endl;
+    for (int i = 0; i < indexes.size() && i < 5; i++)
+    {
         cout << "Contents of index block " << i << ":" << endl;
-        for (int j=0;j<indexes[i].size();j++){
+        for (int j = 0; j < indexes[i].size(); j++)
+        {
             cout << indexes[i][j] << ", ";
         }
         cout << "\n";
     }
-    cout <<"Returned recordList size: "<<recordList.size()<<endl;
+    cout << "Returned recordList size: " << recordList.size() << endl;
     return recordList;
 }
 
-//search Range operation
-vector<byte *> BPTree::searchRange(int startKey, int endKey){
-    bool found=false;
-    bool end=false;
+// search Range operation
+vector<byte *> BPTree::searchRange(int startKey, int endKey)
+{
+    bool found = false;
+    bool end = false;
     int startPos;
     vector<vector<int>> indexes;
-    int noOfIndexes=0;
+    int noOfIndexes = 0;
     vector<int> newIndex;
     vector<byte *> recordList;
     if (root == NULL)
@@ -193,17 +196,17 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey){
     else
     {
         Node *cursor = root;
-        //find leaf node which may contain startKey
+        // find leaf node which may contain startKey
         while (cursor->isLeaf == false)
         {
-            //capturing index node's contents
+            // capturing index node's contents
             noOfIndexes++;
             newIndex.clear();
-            for (int i=0;i<cursor->size;i++){
+            for (int i = 0; i < cursor->size; i++)
+            {
                 newIndex.push_back(cursor->keys[i]);
             }
             indexes.push_back(newIndex);
-            
 
             for (int i = 0; i < cursor->size; i++)
             {
@@ -219,89 +222,105 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey){
                 }
             }
         }
-        //capturing leaf node's contents
+        // capturing leaf node's contents
         noOfIndexes++;
         newIndex.clear();
-        for (int i=0;i<cursor->size;i++){
+        for (int i = 0; i < cursor->size; i++)
+        {
             newIndex.push_back(cursor->keys[i]);
         }
         indexes.push_back(newIndex);
 
-        //find startKey in leaf node
+        // find startKey in leaf node
         for (int i = 0; i < cursor->size; i++)
         {
             if (cursor->keys[i] >= startKey)
             {
                 cout << "Found first record\n";
-                found=true;
-                recordList=cursor->ptrs[i].recordPtrs;
-                startPos=i;
+                found = true;
+                recordList = cursor->ptrs[i].recordPtrs;
+                startPos = i;
                 break;
             }
         }
-        //if startKey not found in the leaf node, try next leaf node
-        if (!found){
-            //capture index node contents
-            
-            cursor=(Node *)cursor->ptrs[NODE_KEYS].nodePtr;
-            if (cursor!=NULL){
+        // if startKey not found in the leaf node, try next leaf node
+        if (!found)
+        {
+            // capture index node contents
+
+            cursor = (Node *)cursor->ptrs[NODE_KEYS].nodePtr;
+            if (cursor != NULL)
+            {
                 noOfIndexes++;
                 newIndex.clear();
-                for (int i=0;i<cursor->size;i++){
+                for (int i = 0; i < cursor->size; i++)
+                {
                     newIndex.push_back(cursor->keys[i]);
                 }
                 indexes.push_back(newIndex);
-                
-                recordList=cursor->ptrs[0].recordPtrs;
-                startPos=0;
+
+                recordList = cursor->ptrs[0].recordPtrs;
+                startPos = 0;
                 cout << "Found\n";
-                found=true;
+                found = true;
             }
         }
-        if (!found){
+        if (!found)
+        {
             cout << "No records found in this range\n";
         }
-        //get all records in the range [startKey,endKey]
-        //iterate through current index node
-        if (found){
-            cout <<"getting all records"<<endl;
-            for (int i=startPos+1;i<cursor->size;i++){
-                if (cursor->keys[i]<=endKey){
-                    cout <<"key found: "<<cursor->keys[i]<<endl;
+        // get all records in the range [startKey,endKey]
+        // iterate through current index node
+        if (found)
+        {
+            cout << "getting all records" << endl;
+            for (int i = startPos + 1; i < cursor->size; i++)
+            {
+                if (cursor->keys[i] <= endKey)
+                {
+                    cout << "key found: " << cursor->keys[i] << endl;
                     recordList.insert(recordList.end(), cursor->ptrs[i].recordPtrs.begin(), cursor->ptrs[i].recordPtrs.end());
                 }
-                else {
-                    end=true;
+                else
+                {
+                    end = true;
                     break;
                 }
             }
-            cout <<"end: "<<end<<endl;
-            if (!end){
-            //iterate through adjacent index nodes
-                cursor=(Node *)cursor->ptrs[NODE_KEYS].nodePtr;
-                int i=0;
-                cout <<"cursor: "<<cursor<<endl;
-                if (cursor!=NULL){
-                    cout <<cursor->keys[0]<<endl;
+            cout << "end: " << end << endl;
+            if (!end)
+            {
+                // iterate through adjacent index nodes
+                cursor = (Node *)cursor->ptrs[NODE_KEYS].nodePtr;
+                int i = 0;
+                cout << "cursor: " << cursor << endl;
+                if (cursor != NULL)
+                {
+                    cout << cursor->keys[0] << endl;
                     noOfIndexes++;
                     newIndex.clear();
-                    for (int i=0;i<cursor->size;i++){
+                    for (int i = 0; i < cursor->size; i++)
+                    {
                         newIndex.push_back(cursor->keys[i]);
                     }
                     indexes.push_back(newIndex);
                 }
-                while(cursor!=NULL && cursor->keys[i]<=endKey){
-                    cout <<"i:"<<i<<endl;
-                    cout <<"cursor size: "<<cursor->size<<endl;
+                while (cursor != NULL && cursor->keys[i] <= endKey)
+                {
+                    cout << "i:" << i << endl;
+                    cout << "cursor size: " << cursor->size << endl;
                     recordList.insert(recordList.end(), cursor->ptrs[i].recordPtrs.begin(), cursor->ptrs[i].recordPtrs.end());
                     i++;
-                    if (i==cursor->size){
-                        cursor=(Node *)cursor->ptrs[NODE_KEYS].nodePtr;
-                        i=0;
-                        if (cursor!=NULL){
+                    if (i == cursor->size)
+                    {
+                        cursor = (Node *)cursor->ptrs[NODE_KEYS].nodePtr;
+                        i = 0;
+                        if (cursor != NULL)
+                        {
                             noOfIndexes++;
                             newIndex.clear();
-                            for (int i=0;i<cursor->size;i++){
+                            for (int i = 0; i < cursor->size; i++)
+                            {
                                 newIndex.push_back(cursor->keys[i]);
                             }
                             indexes.push_back(newIndex);
@@ -310,12 +329,13 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey){
                 }
             }
         }
-        
     }
-    cout << "Number of index blocks accessed: "<<indexes.size()<<endl;
-    for (int i=0;i<indexes.size() && i<5;i++){
+    cout << "Number of index blocks accessed: " << indexes.size() << endl;
+    for (int i = 0; i < indexes.size() && i < 5; i++)
+    {
         cout << "Contents of index block " << i << ":" << endl;
-        for (int j=0;j<indexes[i].size();j++){
+        for (int j = 0; j < indexes[i].size(); j++)
+        {
             cout << indexes[i][j] << ", ";
         }
         cout << "\n";
@@ -333,7 +353,7 @@ void BPTree::insert(int key, byte *recordAdd)
         root->keys[0] = key;
         // insert adress of record insertion point 1
         root->ptrs[0].recordPtrs.push_back(recordAdd);
-        cout << "recordAdd: "<<recordAdd <<endl;
+        cout << "recordAdd: " << recordAdd << endl;
         root->isLeaf = true;
         root->size = 1;
     }
@@ -341,14 +361,15 @@ void BPTree::insert(int key, byte *recordAdd)
     {
         Node *cursor = root;
         Node *parent;
-        //check if key already exist in b+ tree
-        Node* searchKey;
+        // check if key already exist in b+ tree
+        Node *searchKey;
         searchKey = search(key);
-        //if key already exist in b+ tree
-        if (searchKey != nullptr){
-            for(int i = 0; i < searchKey->size; i++)
+        // if key already exist in b+ tree
+        if (searchKey != nullptr)
+        {
+            for (int i = 0; i < searchKey->size; i++)
             {
-                if(searchKey->keys[i] == key)
+                if (searchKey->keys[i] == key)
                 {
                     searchKey->ptrs[i].recordPtrs.push_back(recordAdd);
                     break;
@@ -357,7 +378,7 @@ void BPTree::insert(int key, byte *recordAdd)
             return;
         }
 
-        //if key does not already exist in b+ tree
+        // if key does not already exist in b+ tree
         while (cursor->isLeaf == false) // traverse to the leaf level
         {
             parent = cursor;
@@ -389,7 +410,7 @@ void BPTree::insert(int key, byte *recordAdd)
             cursor->keys[i] = key;
             ptrs_struct newptr;
             newptr.recordPtrs.push_back(recordAdd);
-            cursor->ptrs[i]=newptr; 
+            cursor->ptrs[i] = newptr;
             cursor->size++;
             // cursor->ptrs[cursor->size] = cursor->ptrs[cursor->size - 1]; // update the pointer to next leaf
             // cursor->ptrs[cursor->size - 1] = NULL;
@@ -399,34 +420,34 @@ void BPTree::insert(int key, byte *recordAdd)
             Node *newLeaf = new Node();
             // int virtualNode[MAX + 1]; // create an array of size max+1 to store the keys, including the new key
             Node *virtualNode = new Node(NODE_KEYS + 1); // create a virtualnode with 1 more key+pointer
-            //copy contents of current leaf node to virtualNode
+            // copy contents of current leaf node to virtualNode
             for (int i = 0; i < NODE_KEYS; i++)
             {
                 // virtualNode[i] = cursor->key[i];
                 virtualNode->keys[i] = cursor->keys[i];
                 virtualNode->ptrs[i] = cursor->ptrs[i];
             }
-            //find position to insert new key
+            // find position to insert new key
             int i = 0, j;
             while (key > virtualNode->keys[i] && i < NODE_KEYS) // i = index of first key larger than key
                 i++;
-            //make space for new key
+            // make space for new key
             for (int j = NODE_KEYS; j > i; j--)
             {
                 virtualNode->keys[j] = virtualNode->keys[j - 1];
                 virtualNode->ptrs[j] = virtualNode->ptrs[j - 1];
             }
-            virtualNode->keys[i] = key;         // replace key
+            virtualNode->keys[i] = key; // replace key
             ptrs_struct newptr;
             newptr.recordPtrs.push_back(recordAdd);
             virtualNode->ptrs[i] = newptr; // replace recordaddress
 
             newLeaf->isLeaf = true;
             cursor->size = (NODE_KEYS + 1) / 2;
-            newLeaf->size = NODE_KEYS + 1 - (NODE_KEYS + 1) / 2;        // splitting the node into 2 and deciding th sizes
-            newLeaf->ptrs[NODE_KEYS] = cursor->ptrs[NODE_KEYS];     // exhange pointers to next leaf
-            cursor->ptrs[NODE_KEYS].nodePtr = newLeaf;            // update pointer to next leaf node
-             
+            newLeaf->size = NODE_KEYS + 1 - (NODE_KEYS + 1) / 2; // splitting the node into 2 and deciding th sizes
+            newLeaf->ptrs[NODE_KEYS] = cursor->ptrs[NODE_KEYS];  // exhange pointers to next leaf
+            cursor->ptrs[NODE_KEYS].nodePtr = newLeaf;           // update pointer to next leaf node
+
             // cursor->ptrs[NODE_KEYS].clear();                        // remove original link to next leaf
 
             for (i = 0; i < cursor->size; i++)
@@ -440,7 +461,7 @@ void BPTree::insert(int key, byte *recordAdd)
                 newLeaf->ptrs[i] = virtualNode->ptrs[j]; // transfering keys into new node insertion point 4
             }
 
-            //if there is only cursor and newLeaf, just create a new root
+            // if there is only cursor and newLeaf, just create a new root
             if (cursor == root)
             {
                 Node *newRoot = new Node();
@@ -451,7 +472,7 @@ void BPTree::insert(int key, byte *recordAdd)
                 newRoot->size = 1;
                 root = newRoot;
             }
-            else //there exist at least 2 levels, insert a new key into internal nodes
+            else // there exist at least 2 levels, insert a new key into internal nodes
             {
                 insertInternal(newLeaf->keys[0], parent, newLeaf);
             }
@@ -462,7 +483,7 @@ void BPTree::insert(int key, byte *recordAdd)
 // Insert Operation
 void BPTree::insertInternal(int x, Node *cursor, Node *child)
 {
-    //there is still space in the parent node
+    // there is still space in the parent node
     if (cursor->size < NODE_KEYS)
     {
         int i = 0;
@@ -480,7 +501,7 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
         cursor->ptrs[i + 1].nodePtr = child;
         cursor->size++;
     }
-    //no more space in the parent node, need to split the parent node
+    // no more space in the parent node, need to split the parent node
     else
     {
         Node *newInternal = new Node();
@@ -494,17 +515,17 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
         {
             virtualPtr[i] = (Node *)cursor->ptrs[i].nodePtr;
         }
-        //find position to insert x
+        // find position to insert x
         int i = 0, j;
         while (x > virtualKey[i] && i < NODE_KEYS)
             i++;
-        //make space for x
+        // make space for x
         for (int j = NODE_KEYS; j > i; j--)
         {
             virtualKey[j] = virtualKey[j - 1];
         }
         virtualKey[i] = x;
-        //make space for pointer to child
+        // make space for pointer to child
         for (int j = NODE_KEYS + 1; j > i + 1; j--)
         {
             virtualPtr[j] = virtualPtr[j - 1];
@@ -513,7 +534,7 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
 
         newInternal->isLeaf = false;
 
-        cursor->size = (NODE_KEYS+ 1) / 2;
+        cursor->size = (NODE_KEYS + 1) / 2;
         newInternal->size = NODE_KEYS - (NODE_KEYS + 1) / 2;
 
         // assign key and ptrs of cursor
@@ -524,9 +545,8 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
         for (i = 0; i < cursor->size + 1; i++)
         {
             cursor->ptrs[i].nodePtr = virtualPtr[i];
-
         }
-        //assign keys and ptrs of newInternal
+        // assign keys and ptrs of newInternal
         for (i = 0, j = cursor->size + 1; i < newInternal->size; i++, j++)
         {
             newInternal->keys[i] = virtualKey[j];
@@ -535,12 +555,12 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
         {
             newInternal->ptrs[i].nodePtr = virtualPtr[j];
         }
-        
+
         if (cursor == root)
         {
             Node *newRoot = new Node();
             // newRoot->keys[0] = cursor->keys[cursor->size];
-            //get the smallest key found in the subtree under newInternal
+            // get the smallest key found in the subtree under newInternal
             newRoot->keys[0] = findSmallestKeyInSubtree(newInternal);
             newRoot->ptrs[0].nodePtr = cursor;
             newRoot->ptrs[1].nodePtr = newInternal;
@@ -555,13 +575,15 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
     }
 }
 
-//find smallest key in subtree
-int BPTree::findSmallestKeyInSubtree(Node *cursor){
+// find smallest key in subtree
+int BPTree::findSmallestKeyInSubtree(Node *cursor)
+{
     int smallestKey;
-    while (!cursor->isLeaf){
-        cursor=(Node *)cursor->ptrs[0].nodePtr;
+    while (!cursor->isLeaf)
+    {
+        cursor = (Node *)cursor->ptrs[0].nodePtr;
     }
-    smallestKey=cursor->keys[0];
+    smallestKey = cursor->keys[0];
     return smallestKey;
 }
 
@@ -569,12 +591,12 @@ int BPTree::findSmallestKeyInSubtree(Node *cursor){
 Node *BPTree::findParent(Node *cursor, Node *child)
 {
     Node *parent;
-    //cursor cannot be a parent if it is a leaf node and parent of an internal node cannot be in the second last level
+    // cursor cannot be a parent if it is a leaf node and parent of an internal node cannot be in the second last level
     if (cursor->isLeaf || ((Node *)cursor->ptrs[0].nodePtr)->isLeaf)
     {
         return NULL;
     }
-    //starting from root node, find the child node
+    // starting from root node, find the child node
     for (int i = 0; i < cursor->size + 1; i++)
     {
         if ((Node *)cursor->ptrs[i].nodePtr == child)
@@ -595,7 +617,7 @@ Node *BPTree::findParent(Node *cursor, Node *child)
 // Print the tree
 void BPTree::display(Node *cursor, int level)
 {
-    cout << "level: " << level<<endl;
+    cout << "level: " << level << endl;
     if (cursor != NULL)
     {
         for (int i = 0; i < cursor->size; i++)
@@ -607,157 +629,190 @@ void BPTree::display(Node *cursor, int level)
         {
             for (int i = 0; i < cursor->size + 1; i++)
             {
-                display((Node *)cursor->ptrs[i].nodePtr,level+1);
+                display((Node *)cursor->ptrs[i].nodePtr, level + 1);
             }
         }
     }
 }
-void BPTree::remove(int x) {
-  if (root == NULL) {
-    cout << "Tree empty\n";
-  } else {
-    Node *cursor = root;
-    Node *parent;
-    int leftSibling, rightSibling;
-    while (cursor->isLeaf == false) {
-      for (int i = 0; i < cursor->size; i++) {
-        parent = cursor;
-        leftSibling = i - 1;
-        rightSibling = i + 1;
-        if (x < (cursor->keys)[i]) {
-          cursor = (Node*) cursor->ptrs[i].nodePtr;
-          break;
+void BPTree::remove(int x)
+{
+    if (root == NULL)
+    {
+        cout << "Tree empty\n";
+    }
+    else
+    {
+        Node *cursor = root;
+        Node *parent;
+        int leftSibling, rightSibling;
+        while (cursor->isLeaf == false)
+        {
+            for (int i = 0; i < cursor->size; i++)
+            {
+                parent = cursor;
+                leftSibling = i - 1;
+                rightSibling = i + 1;
+                if (x < (cursor->keys)[i])
+                {
+                    cursor = (Node *)cursor->ptrs[i].nodePtr;
+                    break;
+                }
+                if (i == cursor->size - 1)
+                {
+                    leftSibling = i;
+                    rightSibling = i + 2;
+                    cursor = (Node *)cursor->ptrs[i + 1].nodePtr;
+                    break;
+                }
+            }
         }
-        if (i == cursor->size - 1) {
-          leftSibling = i;
-          rightSibling = i + 2;
-          cursor = (Node*) cursor->ptrs[i + 1].nodePtr;
-          break;
+        bool found = false;
+        int pos;
+        for (pos = 0; pos < cursor->size; pos++)
+        {
+            if (cursor->keys[pos] == x)
+            {
+                found = true;
+                break;
+            }
         }
-      }
-    }
-    bool found = false;
-    int pos;
-    for (pos = 0; pos < cursor->size; pos++) {
-      if (cursor->keys[pos] == x) {
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      cout << "Not found\n";
-      return;
-    }
-    for (int i = pos; i < cursor->size; i++) {
-      cursor->keys[i] = cursor->keys[i + 1];
-    }
-    cursor->size--;
-    if (cursor == root) {
-      for (int i = 0; i < NODE_KEYS + 1; i++) {
-        cursor->ptrs[i].nodePtr = NULL;
-      }
-      if (cursor->size == 0) {
-        cout << "Tree died\n";
-        delete[] cursor->keys;
-        delete[] cursor->ptrs;
-        delete cursor;
-        root = NULL;
-      }
-      return;
-    }
-    cursor->ptrs[cursor->size] = cursor->ptrs[cursor->size + 1];
-    cursor->ptrs[cursor->size + 1].nodePtr = NULL;
-    if (cursor->size >= (NODE_KEYS + 1) / 2) {
-      return;
-    }
-    if (leftSibling >= 0) {
-      Node *leftNode = (Node*) parent->ptrs[leftSibling].nodePtr;
-      if (leftNode->size >= (NODE_KEYS + 1) / 2 + 1) {
-        for (int i = cursor->size; i > 0; i--) {
-          cursor->keys[i] = cursor->keys[i - 1];
+        if (!found)
+        {
+            cout << "Not found\n";
+            return;
         }
-        cursor->size++;
-        cursor->ptrs[cursor->size] = cursor->ptrs[cursor->size - 1];
-        cursor->ptrs[cursor->size - 1].nodePtr = NULL;
-        cursor->keys[0] = leftNode->keys[leftNode->size - 1];
-        leftNode->size--;
-        leftNode->ptrs[leftNode->size].nodePtr = cursor;
-        leftNode->ptrs[leftNode->size + 1].nodePtr = NULL;
-        parent->keys[leftSibling] = cursor->keys[0];
-        return;
-      }
-    }
-    if (rightSibling <= parent->size) {
-      Node *rightNode = (Node*)parent->ptrs[rightSibling].nodePtr;
-      if (rightNode->size >= (NODE_KEYS + 1) / 2 + 1) {
-        cursor->size++;
-        cursor->ptrs[cursor->size] = cursor->ptrs[cursor->size - 1];
-        cursor->ptrs[cursor->size - 1].nodePtr = NULL;
-        cursor->keys[cursor->size - 1] = rightNode->keys[0];
-        rightNode->size--;
-        rightNode->ptrs[rightNode->size] = rightNode->ptrs[rightNode->size + 1];
-        rightNode->ptrs[rightNode->size + 1].nodePtr = NULL;
-        for (int i = 0; i < rightNode->size; i++) {
-          rightNode->keys[i] = rightNode->keys[i + 1];
+        for (int i = pos; i < cursor->size; i++)
+        {
+            cursor->keys[i] = cursor->keys[i + 1];
         }
-        parent->keys[rightSibling - 1] = rightNode->keys[0];
-        return;
-      }
+        cursor->size--;
+        if (cursor == root)
+        {
+            for (int i = 0; i < NODE_KEYS + 1; i++)
+            {
+                cursor->ptrs[i].nodePtr = NULL;
+            }
+            if (cursor->size == 0)
+            {
+                cout << "Tree died\n";
+                delete[] cursor->keys;
+                delete[] cursor->ptrs;
+                delete cursor;
+                root = NULL;
+            }
+            return;
+        }
+        cursor->ptrs[cursor->size] = cursor->ptrs[cursor->size + 1];
+        cursor->ptrs[cursor->size + 1].nodePtr = NULL;
+        if (cursor->size >= (NODE_KEYS + 1) / 2)
+        {
+            return;
+        }
+        if (leftSibling >= 0)
+        {
+            Node *leftNode = (Node *)parent->ptrs[leftSibling].nodePtr;
+            if (leftNode->size >= (NODE_KEYS + 1) / 2 + 1)
+            {
+                for (int i = cursor->size; i > 0; i--)
+                {
+                    cursor->keys[i] = cursor->keys[i - 1];
+                }
+                cursor->size++;
+                cursor->ptrs[cursor->size] = cursor->ptrs[cursor->size - 1];
+                cursor->ptrs[cursor->size - 1].nodePtr = NULL;
+                cursor->keys[0] = leftNode->keys[leftNode->size - 1];
+                leftNode->size--;
+                leftNode->ptrs[leftNode->size].nodePtr = cursor;
+                leftNode->ptrs[leftNode->size + 1].nodePtr = NULL;
+                parent->keys[leftSibling] = cursor->keys[0];
+                return;
+            }
+        }
+        if (rightSibling <= parent->size)
+        {
+            Node *rightNode = (Node *)parent->ptrs[rightSibling].nodePtr;
+            if (rightNode->size >= (NODE_KEYS + 1) / 2 + 1)
+            {
+                cursor->size++;
+                cursor->ptrs[cursor->size] = cursor->ptrs[cursor->size - 1];
+                cursor->ptrs[cursor->size - 1].nodePtr = NULL;
+                cursor->keys[cursor->size - 1] = rightNode->keys[0];
+                rightNode->size--;
+                rightNode->ptrs[rightNode->size] = rightNode->ptrs[rightNode->size + 1];
+                rightNode->ptrs[rightNode->size + 1].nodePtr = NULL;
+                for (int i = 0; i < rightNode->size; i++)
+                {
+                    rightNode->keys[i] = rightNode->keys[i + 1];
+                }
+                parent->keys[rightSibling - 1] = rightNode->keys[0];
+                return;
+            }
+        }
+        if (leftSibling >= 0)
+        {
+            Node *leftNode = (Node *)parent->ptrs[leftSibling].nodePtr;
+            for (int i = leftNode->size, j = 0; j < cursor->size; i++, j++)
+            {
+                leftNode->keys[i] = cursor->keys[j];
+            }
+            leftNode->ptrs[leftNode->size].nodePtr = NULL;
+            leftNode->size += cursor->size;
+            leftNode->ptrs[leftNode->size] = cursor->ptrs[cursor->size];
+            removeInternal(parent->keys[leftSibling], parent, cursor);
+            delete[] cursor->keys;
+            delete[] cursor->ptrs;
+            delete cursor;
+        }
+        else if (rightSibling <= parent->size)
+        {
+            Node *rightNode = (Node *)parent->ptrs[rightSibling].nodePtr;
+            for (int i = cursor->size, j = 0; j < rightNode->size; i++, j++)
+            {
+                cursor->keys[i] = rightNode->keys[j];
+            }
+            cursor->ptrs[cursor->size].nodePtr = NULL;
+            cursor->size += rightNode->size;
+            cursor->ptrs[cursor->size] = rightNode->ptrs[rightNode->size];
+            cout << "Merging two leaf nodes\n";
+            removeInternal(parent->keys[rightSibling - 1], parent, rightNode);
+            delete[] rightNode->keys;
+            delete[] rightNode->ptrs;
+            delete rightNode;
+        }
     }
-    if (leftSibling >= 0) {
-      Node *leftNode = (Node*) parent->ptrs[leftSibling].nodePtr;
-      for (int i = leftNode->size, j = 0; j < cursor->size; i++, j++) {
-        leftNode->keys[i] = cursor->keys[j];
-      }
-      leftNode->ptrs[leftNode->size].nodePtr = NULL;
-      leftNode->size += cursor->size;
-      leftNode->ptrs[leftNode->size] = cursor->ptrs[cursor->size];
-      removeInternal(parent->keys[leftSibling], parent, cursor);
-      delete[] cursor->keys;
-      delete[] cursor->ptrs;
-      delete cursor;
-    } else if (rightSibling <= parent->size) {
-      Node *rightNode = (Node*) parent->ptrs[rightSibling].nodePtr;
-      for (int i = cursor->size, j = 0; j < rightNode->size; i++, j++) {
-        cursor->keys[i] = rightNode->keys[j];
-      }
-      cursor->ptrs[cursor->size].nodePtr = NULL;
-      cursor->size += rightNode->size;
-      cursor->ptrs[cursor->size] = rightNode->ptrs[rightNode->size];
-      cout << "Merging two leaf nodes\n";
-      removeInternal(parent->keys[rightSibling - 1], parent, rightNode);
-      delete[] rightNode->keys;
-      delete[] rightNode->ptrs;
-      delete rightNode;
-    }
-  }
 }
-void BPTree::removeInternal(int x, Node *cursor, Node *child) {
-  if (cursor == root) {
-    if (cursor->size == 1) {
-      if (cursor->ptrs[1].nodePtr == child) {
-        delete[] child->keys;
-        delete[] child->ptrs;
-        delete child;
-        root = (Node*) cursor->ptrs[0].nodePtr;
-        delete[] cursor->keys;
-        delete[] cursor->ptrs;
-        delete cursor;
-        cout << "Changed root node\n";
-        return;
-      } else if (cursor->ptrs[0].nodePtr == child) {
-        delete[] child->keys;
-        delete[] child->ptrs;
-        delete child;
-        root = (Node*) (cursor->ptrs)[1].nodePtr;
-        delete[] cursor->keys;
-        delete[] cursor->ptrs;
-        delete cursor;
-        cout << "Changed root node\n";
-        return;
-      }
+void BPTree::removeInternal(int x, Node *cursor, Node *child)
+{
+    if (cursor == root)
+    {
+        if (cursor->size == 1)
+        {
+            if (cursor->ptrs[1].nodePtr == child)
+            {
+                delete[] child->keys;
+                delete[] child->ptrs;
+                delete child;
+                root = (Node *)cursor->ptrs[0].nodePtr;
+                delete[] cursor->keys;
+                delete[] cursor->ptrs;
+                delete cursor;
+                cout << "Changed root node\n";
+                return;
+            }
+            else if (cursor->ptrs[0].nodePtr == child)
+            {
+                delete[] child->keys;
+                delete[] child->ptrs;
+                delete child;
+                root = (Node *)(cursor->ptrs)[1].nodePtr;
+                delete[] cursor->keys;
+                delete[] cursor->ptrs;
+                delete cursor;
+                cout << "Changed root node\n";
+                return;
+            }
+        }
     }
-  }
 }
 // Get the root
 Node *BPTree::getRoot()
@@ -765,8 +820,9 @@ Node *BPTree::getRoot()
     return root;
 }
 
-//Get number of nodes
-int BPTree::getNoOfNodes(Node *cursor, int count){
+// Get number of nodes
+int BPTree::getNoOfNodes(Node *cursor, int count)
+{
     if (cursor != NULL)
     {
         count++;
@@ -774,9 +830,30 @@ int BPTree::getNoOfNodes(Node *cursor, int count){
         {
             for (int i = 0; i < cursor->size + 1; i++)
             {
-                count+=getNoOfNodes((Node *)cursor->ptrs[i].nodePtr,0);
+                count += getNoOfNodes((Node *)cursor->ptrs[i].nodePtr, 0);
             }
         }
     }
     return count;
+}
+
+// get height
+int BPTree::getHeight(Node *cursor)
+{
+    int h = 0;
+    if (cursor == NULL)
+    {
+        return 0;
+    }
+    if (cursor->isLeaf == true)
+    {
+        h = 0;
+        return h;
+    }
+    if (cursor->isLeaf != true)
+    {
+        h = this->getHeight((Node *)cursor->ptrs[0].nodePtr);
+        return h + 1;
+    }
+    return h;
 }
