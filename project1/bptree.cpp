@@ -350,6 +350,23 @@ int BPTree::get_h(Node *cursor)
     return h;
 }
 
+// Get the size
+void BPTree::get_size(Node *cursor, int *size)
+{
+    if (cursor != NULL)
+    {
+        (*size)++;
+
+        if (cursor->IS_LEAF != true)
+        {
+            for (int i = 0; i < cursor->size + 1; i++)
+            {
+                get_size((Node *)cursor->ptr[i], size);
+            }
+        }
+    }
+}
+
 // Get the root
 Node *BPTree::getRoot()
 {

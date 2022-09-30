@@ -34,5 +34,6 @@ public:
     void insert(int, void *, int);
     void display(Node *, int);
     int get_h(Node *);
+    void get_size(Node *, int *);
     Node *getRoot();
 };
