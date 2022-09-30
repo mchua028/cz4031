@@ -9,11 +9,11 @@
 #include "bptree.h"
 using namespace std;
 
-Node::Node()
-{
-    keys = new int[NODE_KEYS];
-    ptrs = new ptrs_struct[NODE_KEYS + 1];
-}
+// Node::Node()
+// {
+//     keys = new int[NODE_KEYS];
+//     ptrs = new ptrs_struct[NODE_KEYS + 1];
+// }
 
 Node::~Node()
 {
@@ -180,7 +180,7 @@ vector<byte *> BPTree::searchRecords(int key)
 }
 
 // search Range operation
-vector<byte *> BPTree::searchRange(int startKey, int endKey)
+vector<byte *> BPTree::searchRange(int startKey, int endKey, int NODE_KEYS)
 {
     bool found = false;
     bool end = false;
@@ -344,12 +344,12 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey)
 }
 
 // Insert Operation
-void BPTree::insert(int key, byte *recordAdd)
+void BPTree::insert(int key, byte *recordAdd, int NODE_KEYS)
 {
     if (root == NULL) // if no root
     {
         void *test;
-        root = new Node();
+        root = new Node(NODE_KEYS);
         root->keys[0] = key;
         // insert adress of record insertion point 1
         root->ptrs[0].recordPtrs.push_back(recordAdd);
@@ -417,7 +417,7 @@ void BPTree::insert(int key, byte *recordAdd)
         }
         else // if the leaf node is full
         {
-            Node *newLeaf = new Node();
+            Node *newLeaf = new Node(NODE_KEYS);
             // int virtualNode[MAX + 1]; // create an array of size max+1 to store the keys, including the new key
             Node *virtualNode = new Node(NODE_KEYS + 1); // create a virtualnode with 1 more key+pointer
             // copy contents of current leaf node to virtualNode
@@ -464,7 +464,7 @@ void BPTree::insert(int key, byte *recordAdd)
             // if there is only cursor and newLeaf, just create a new root
             if (cursor == root)
             {
-                Node *newRoot = new Node();
+                Node *newRoot = new Node(NODE_KEYS);
                 newRoot->keys[0] = newLeaf->keys[0];
                 newRoot->ptrs[0].nodePtr = cursor;
                 newRoot->ptrs[1].nodePtr = newLeaf;
@@ -474,14 +474,14 @@ void BPTree::insert(int key, byte *recordAdd)
             }
             else // there exist at least 2 levels, insert a new key into internal nodes
             {
-                insertInternal(newLeaf->keys[0], parent, newLeaf);
+                insertInternal(newLeaf->keys[0], parent, newLeaf,NODE_KEYS);
             }
         }
     }
 }
 
 // Insert Operation
-void BPTree::insertInternal(int x, Node *cursor, Node *child)
+void BPTree::insertInternal(int x, Node *cursor, Node *child, int NODE_KEYS)
 {
     // there is still space in the parent node
     if (cursor->size < NODE_KEYS)
@@ -504,7 +504,7 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
     // no more space in the parent node, need to split the parent node
     else
     {
-        Node *newInternal = new Node();
+        Node *newInternal = new Node(NODE_KEYS);
         int virtualKey[NODE_KEYS + 1];
         Node *virtualPtr[NODE_KEYS + 2];
         for (int i = 0; i < NODE_KEYS; i++)
@@ -558,7 +558,7 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
 
         if (cursor == root)
         {
-            Node *newRoot = new Node();
+            Node *newRoot = new Node(NODE_KEYS);
             // newRoot->keys[0] = cursor->keys[cursor->size];
             // get the smallest key found in the subtree under newInternal
             newRoot->keys[0] = findSmallestKeyInSubtree(newInternal);
@@ -570,7 +570,7 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child)
         }
         else // there are more than 2 levels in the current tree
         {
-            insertInternal(findSmallestKeyInSubtree(newInternal), findParent(root, cursor), newInternal);
+            insertInternal(findSmallestKeyInSubtree(newInternal), findParent(root, cursor), newInternal,NODE_KEYS);
         }
     }
 }
@@ -634,7 +634,7 @@ void BPTree::display(Node *cursor, int level)
         }
     }
 }
-void BPTree::remove(int x)
+void BPTree::remove(int x, int NODE_KEYS)
 {
     if (root == NULL)
     {
@@ -821,20 +821,35 @@ Node *BPTree::getRoot()
 }
 
 // Get number of nodes
-int BPTree::getNoOfNodes(Node *cursor, int count)
+// void BPTree::getNoOfNodes(Node *cursor, int *count)
+// {
+//     if (cursor != NULL)
+//     {
+//         (*count)++;
+//         if (cursor->isLeaf != true)
+//         {
+//             for (int i = 0; i < cursor->size + 1; i++)
+//             {
+//                 getNoOfNodes((Node *)cursor->ptrs[i].nodePtr,count);
+//             }
+//         }
+//     }
+// }
+
+void BPTree::getNoOfNodes(Node *cursor, int *size)
 {
     if (cursor != NULL)
     {
-        count++;
+        (*size)++;
+        cout <<"size:"<<*size<<endl;
         if (cursor->isLeaf != true)
         {
             for (int i = 0; i < cursor->size + 1; i++)
             {
-                count += getNoOfNodes((Node *)cursor->ptrs[i].nodePtr, 0);
+                getNoOfNodes((Node *)cursor->ptrs[i].nodePtr, size);
             }
         }
     }
-    return count;
 }
 
 // get height
@@ -856,4 +871,21 @@ int BPTree::getHeight(Node *cursor)
         return h + 1;
     }
     return h;
+}
+
+//get root contents
+void BPTree::getRootContents(){
+    for (int i=0;i<(root->size);i++){
+        cout << root->keys[i]<<", ";
+    }
+    cout <<"\n";
+}
+
+//get first child node contents
+void BPTree::getRootChildContents(){
+    Node *firstChild=(Node *)(root->ptrs[0].nodePtr);
+    for (int i=0;i<(firstChild->size);i++){
+        cout << firstChild->keys[i]<<", ";
+    }
+    cout <<"\n";
 }
