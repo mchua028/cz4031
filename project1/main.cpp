@@ -149,20 +149,48 @@ void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey, int
 
 }
 
-int main() {
-    Storage storage(SIZE, BLOCK_SIZE, RECORD_SIZE);
-    BPTree bptree;
-    int NODE_KEYS=(BLOCK_SIZE-16)/20;
-    
-    importData(storage, bptree, NODE_KEYS, "./data2.tsv");
+void experiment5(Storage &storage, BPTree &bptree, int startKey, int endKey, int NODE_KEYS) {
+    cout << "Experiment 5" << endl;
+    vector<byte *> recordPtrs=bptree.searchRange(startKey,endKey,NODE_KEYS);
+    for (int j = 0; j < recordPtrs.size(); j++)
+    {
+        Record r;
+        cout << "fetch recordAdd:" << recordPtrs[j] <<endl;
+        r=get<0>(storage.getRecord(recordPtrs[j]));
+        if (r.numVotes == 1000) {
+            cout << "Record with numvotes = 1000: " << get<0>(storage.getRecord(recordPtrs[j])).tconst << endl;                
+            storage.deleteRecord(recordPtrs[j]);
+            bptree.remove(j, NODE_KEYS);
+        }
+    }
+    int size = 0;
+    cout << "No. of nodes: " << bptree.getNoOfNodes(bptree.getRoot(), &size) << endl;
+    ;
+    cout << "Root Contents" << endl;
+    bptree.getRootContents();
+    cout << "Root Child Contents" << endl;
+    bptree.getRootChildContents();
+}
 
-    experiment1(storage);
+    int main()
+    {
+        Storage storage(SIZE, BLOCK_SIZE, RECORD_SIZE);
+        BPTree bptree;
+        int NODE_KEYS = (BLOCK_SIZE - 16) / 20;
 
-    experiment2(bptree,NODE_KEYS);
+        importData(storage, bptree, NODE_KEYS, "./data2.tsv");
 
-    experiment3(storage, bptree, 262);
+        experiment1(storage);
 
-    experiment4(storage, bptree, 100,2000, NODE_KEYS);
+        experiment2(bptree, NODE_KEYS);
 
-    return 0;
+        experiment3(storage, bptree, 262);
+
+        experiment4(storage, bptree, 100, 2000, NODE_KEYS);
+        
+        experiment5(storage, bptree, 100, 2000, NODE_KEYS);
+        // cout <<"Experiment 3:"<<endl;
+        // experiment3(storage, bptree, 1645);
+
+        return 0;
 }

@@ -44,7 +44,7 @@ public:
     void remove(int x, int NODE_KEYS);
     void display(Node *, int);
     Node *getRoot();
-    void getNoOfNodes(Node *, int *);
+    int getNoOfNodes(Node *, int *);
     int getHeight(Node *);
     void getRootContents();
     void getRootChildContents();
