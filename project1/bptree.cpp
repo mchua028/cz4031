@@ -38,6 +38,7 @@ BPTree::~BPTree()
 //recursively delete nodes of bptree
 void BPTree::cleanUp(Node *cursor)
 {
+    cout <<"Cleaning up bptree"<<endl;
     if(cursor!=NULL)
     {
         if(!cursor->isLeaf)
@@ -172,6 +173,7 @@ vector<byte *> BPTree::searchRecords(int key)
         }
         cout << "\n";
     }
+    cout <<"Returned recordList size: "<<recordList.size()<<endl;
     return recordList;
 }
 
@@ -230,7 +232,7 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey){
         {
             if (cursor->keys[i] >= startKey)
             {
-                cout << "Found\n";
+                cout << "Found first record\n";
                 found=true;
                 recordList=cursor->ptrs[i].recordPtrs;
                 startPos=i;
@@ -262,8 +264,10 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey){
         //get all records in the range [startKey,endKey]
         //iterate through current index node
         if (found){
+            cout <<"getting all records"<<endl;
             for (int i=startPos+1;i<cursor->size;i++){
                 if (cursor->keys[i]<=endKey){
+                    cout <<"key found: "<<cursor->keys[i]<<endl;
                     recordList.insert(recordList.end(), cursor->ptrs[i].recordPtrs.begin(), cursor->ptrs[i].recordPtrs.end());
                 }
                 else {
@@ -271,11 +275,14 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey){
                     break;
                 }
             }
+            cout <<"end: "<<end<<endl;
             if (!end){
             //iterate through adjacent index nodes
                 cursor=(Node *)cursor->ptrs[NODE_KEYS].nodePtr;
                 int i=0;
+                cout <<"cursor: "<<cursor<<endl;
                 if (cursor!=NULL){
+                    cout <<cursor->keys[0]<<endl;
                     noOfIndexes++;
                     newIndex.clear();
                     for (int i=0;i<cursor->size;i++){
@@ -284,6 +291,8 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey){
                     indexes.push_back(newIndex);
                 }
                 while(cursor!=NULL && cursor->keys[i]<=endKey){
+                    cout <<"i:"<<i<<endl;
+                    cout <<"cursor size: "<<cursor->size<<endl;
                     recordList.insert(recordList.end(), cursor->ptrs[i].recordPtrs.begin(), cursor->ptrs[i].recordPtrs.end());
                     i++;
                     if (i==cursor->size){
@@ -754,4 +763,20 @@ void BPTree::removeInternal(int x, Node *cursor, Node *child) {
 Node *BPTree::getRoot()
 {
     return root;
+}
+
+//Get number of nodes
+int BPTree::getNoOfNodes(Node *cursor, int count){
+    if (cursor != NULL)
+    {
+        count++;
+        if (cursor->isLeaf != true)
+        {
+            for (int i = 0; i < cursor->size + 1; i++)
+            {
+                count+=getNoOfNodes((Node *)cursor->ptrs[i].nodePtr,0);
+            }
+        }
+    }
+    return count;
 }

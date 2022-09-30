@@ -3,7 +3,7 @@ using namespace std;
 const int NODE_KEYS = 3;
 
 struct ptrs_struct{
-    void *nodePtr;
+    void *nodePtr=NULL;
     vector <byte*> recordPtrs;
 };
 
@@ -42,5 +42,7 @@ class BPTree {
         void remove(int x);
         void display(Node *, int);
         Node *getRoot();
+        int getNoOfNodes(Node *, int);
+        int getHeight();
         void cleanUp(Node *);
 };

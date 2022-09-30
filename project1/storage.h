@@ -45,6 +45,7 @@ class Storage {
         int getRecordSize();
         int getUsedBlocks();
         int getUsedSize();
+        std::byte* getStoragePtr();
         std::vector<std::string> getBlockContent(int blockIdx);
         std::tuple<Record, int> getRecord(std::byte* startPtr);
         std::tuple<std::vector<Record>, std::vector<int>> getRecords(std::vector<std::byte *> startPtrs); 
