@@ -311,7 +311,7 @@ Node *BPTree::findParent(Node *cursor, Node *child)
 // Print the tree
 void BPTree::display(Node *cursor, int level)
 {
-    cout <<"level: "<<level<<endl;
+    cout << "level: " << level << endl;
     if (cursor != NULL)
     {
         for (int i = 0; i < cursor->size; i++)
@@ -323,10 +323,31 @@ void BPTree::display(Node *cursor, int level)
         {
             for (int i = 0; i < cursor->size + 1; i++)
             {
-                display((Node *)cursor->ptr[i],level+1);
+                display((Node *)cursor->ptr[i], level + 1);
             }
         }
     }
+}
+
+// get height
+int BPTree::get_h(Node *cursor)
+{
+    int h = 0;
+    if (cursor == NULL)
+    {
+        return 0;
+    }
+    if (cursor->IS_LEAF == true)
+    {
+        h = 0;
+        return h;
+    }
+    if (cursor->IS_LEAF != true)
+    {
+        h = this->get_h((Node *)cursor->ptr[0]);
+        return h + 1;
+    }
+    return h;
 }
 
 // Get the root

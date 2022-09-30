@@ -32,6 +32,7 @@ public:
     ~BPTree();
     void *search(int);
     void insert(int, void *, int);
-    void display(Node *,int);
+    void display(Node *, int);
+    int get_h(Node *);
     Node *getRoot();
 };

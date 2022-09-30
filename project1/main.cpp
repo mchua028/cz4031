@@ -193,6 +193,9 @@ int main()
     }*/
 
     tree.display(tree.getRoot(), 0);
+    int height = 0;
+    height = tree.get_h(tree.getRoot());
+    cout << "height: " << height << endl;
     int c;
     cout << "enter the numVote to retrive the record or -1 to exit: " << endl
          << endl;
