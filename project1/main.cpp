@@ -27,8 +27,6 @@ void importData(Storage &storage, BPTree &bptree, int NODE_KEYS, const char* fil
         buffer >> r.averageRating >> r.numVotes;
 
         std::byte *recordPtr = storage.insertRecord(r);
-        cout << "tconst: " <<r.tconst<<", avgrating: "<<r.averageRating<<", numVotes: "<<r.numVotes<<endl;
-        cout << "insert recordAdd: "<< recordPtr <<endl;
         //insert each record into bptree
         bptree.insert(r.numVotes,recordPtr,NODE_KEYS);
         bptree.display(bptree.getRoot(),0);
@@ -52,7 +50,9 @@ void experiment2(BPTree &bptree, int NODE_KEYS){
     bptree.getNoOfNodes(bptree.getRoot(),&noOfNodes);
     std::cout <<"Number of nodes of bplus tree:"<<noOfNodes<<endl;
     std::cout <<"Height of bplus tree: "<<bptree.getHeight(bptree.getRoot())<<endl;
+    std::cout <<"Root contents:\n";
     bptree.getRootContents();
+    std::cout <<"First child node contents:\n";
     bptree.getRootChildContents();
 }
 
@@ -61,25 +61,16 @@ void experiment3(Storage &storage, BPTree &bptree, int key){
     // std::cout << "fetched records for key="<< key << ": " <<endl;
     vector<byte *> recordPtrs=bptree.searchRecords(key);
 
-    cout <<"hi"<<endl;
     vector<int> blockIndexes;
     float avgRating=0;
-    cout <<"recordptrs size:"<<recordPtrs.size()<<endl;
     
     //get all blocks accessed
     for (int i=0;i<recordPtrs.size();i++){
         byte *recordAdd=recordPtrs[i];
-        // Record r;
-        // std::cout << "fetch recordAdd:" << recordPtrs[i] <<endl;
-        // r=get<0>(storage.getRecord(recordPtrs[i]));
-
-        // std::cout << r.tconst<<endl;
-        // cout <<get<0>(storage.getRecord(recordPtrs[i])).tconst<< endl;
         Record r;
         int blockIdx;
         r=get<0>(storage.getRecord(recordAdd));
         avgRating+=r.averageRating;
-        cout << "tconst: " <<r.tconst<<", avgrating: "<<r.averageRating<<", numVotes: "<<r.numVotes<<endl;
         blockIdx=get<1>(storage.getRecord(recordAdd));
         cout << "block index:"<<blockIdx<<endl;
         if ( std::find(blockIndexes.begin(), blockIndexes.end(), blockIdx) == blockIndexes.end() ){
@@ -106,9 +97,6 @@ void experiment3(Storage &storage, BPTree &bptree, int key){
         }
         cout <<"\n";
     }
-    cout <<"end expt3"<<endl;
-    cout <<avgRating<<endl;
-
     //calculate average rating
     avgRating/=recordPtrs.size();
     cout <<"Average rating: "<<avgRating<<endl;
@@ -122,27 +110,15 @@ void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey, int
 
     vector<int> blockIndexes;
     float avgRating=0;
-    cout <<"recordptrs size:"<<recordPtrs.size()<<endl;
-
-    // int blockSize=BLOCK_SIZE;
-    // int recordSize=RECORD_SIZE;
     
     //get all blocks accessed
     for (int i=0;i<recordPtrs.size();i++){
         byte *recordAdd=recordPtrs[i];
-        // Record r;
-        // std::cout << "fetch recordAdd:" << recordPtrs[i] <<endl;
-        // r=get<0>(storage.getRecord(recordPtrs[i]));
-
-        // std::cout << r.tconst<<endl;
-        // cout <<get<0>(storage.getRecord(recordPtrs[i])).tconst<< endl;
         Record r;
         int blockIdx;
         r=get<0>(storage.getRecord(recordAdd));
         avgRating+=r.averageRating;
-        cout << "tconst: " <<r.tconst<<", avgrating: "<<r.averageRating<<", numVotes: "<<r.numVotes<<endl;
         blockIdx=get<1>(storage.getRecord(recordAdd));
-        cout <<"blockIdx: "<<blockIdx<<endl;
         if ( std::find(blockIndexes.begin(), blockIndexes.end(), blockIdx) == blockIndexes.end() ){
             blockIndexes.push_back(blockIdx);
         }
@@ -150,7 +126,6 @@ void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey, int
         uintptr_t storagePtr = reinterpret_cast<uintptr_t>(storage.getStoragePtr());
 
         if ((intPtr+RECORD_SIZE-1-storagePtr+1)>BLOCK_SIZE){
-            cout <<"end block id: "<<((intPtr+RECORD_SIZE)/BLOCK_SIZE)<<endl;
             if ( std::find(blockIndexes.begin(), blockIndexes.end(), blockIdx+1) == blockIndexes.end() ){
                 blockIndexes.push_back(blockIdx+1);
             }
@@ -168,10 +143,6 @@ void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey, int
         }
         cout <<"\n";
     }
-
-    cout <<"end expt4"<<endl;
-    cout <<avgRating<<endl;
-
     //calculate average rating
     avgRating/=recordPtrs.size();
     cout <<"Average rating: "<<avgRating<<endl;

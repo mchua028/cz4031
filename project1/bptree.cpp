@@ -50,7 +50,7 @@ void BPTree::cleanUp(Node *cursor)
                 cleanUp((Node *)cursor->ptrs[i].nodePtr);
             }
         }
-        cout << "deleting node starting with key " << cursor->keys[0] << endl;
+        // cout << "deleting node starting with key " << cursor->keys[0] << endl;
         delete[] cursor->keys;
         delete[] cursor->ptrs;
         delete cursor;
@@ -175,7 +175,7 @@ vector<byte *> BPTree::searchRecords(int key)
         }
         cout << "\n";
     }
-    cout << "Returned recordList size: " << recordList.size() << endl;
+    // cout << "Returned recordList size: " << recordList.size() << endl;
     return recordList;
 }
 
@@ -261,7 +261,7 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey, int NODE_KEYS)
 
                 recordList = cursor->ptrs[0].recordPtrs;
                 startPos = 0;
-                cout << "Found\n";
+                cout << "Found first record\n";
                 found = true;
             }
         }
@@ -273,12 +273,10 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey, int NODE_KEYS)
         // iterate through current index node
         if (found)
         {
-            cout << "getting all records" << endl;
             for (int i = startPos + 1; i < cursor->size; i++)
             {
                 if (cursor->keys[i] <= endKey)
                 {
-                    cout << "key found: " << cursor->keys[i] << endl;
                     recordList.insert(recordList.end(), cursor->ptrs[i].recordPtrs.begin(), cursor->ptrs[i].recordPtrs.end());
                 }
                 else
@@ -287,16 +285,13 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey, int NODE_KEYS)
                     break;
                 }
             }
-            cout << "end: " << end << endl;
             if (!end)
             {
                 // iterate through adjacent index nodes
                 cursor = (Node *)cursor->ptrs[NODE_KEYS].nodePtr;
                 int i = 0;
-                cout << "cursor: " << cursor << endl;
                 if (cursor != NULL)
                 {
-                    cout << cursor->keys[0] << endl;
                     noOfIndexes++;
                     newIndex.clear();
                     for (int i = 0; i < cursor->size; i++)
@@ -307,8 +302,6 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey, int NODE_KEYS)
                 }
                 while (cursor != NULL && cursor->keys[i] <= endKey)
                 {
-                    cout << "i:" << i << endl;
-                    cout << "cursor size: " << cursor->size << endl;
                     recordList.insert(recordList.end(), cursor->ptrs[i].recordPtrs.begin(), cursor->ptrs[i].recordPtrs.end());
                     i++;
                     if (i == cursor->size)
@@ -353,7 +346,6 @@ void BPTree::insert(int key, byte *recordAdd, int NODE_KEYS)
         root->keys[0] = key;
         // insert adress of record insertion point 1
         root->ptrs[0].recordPtrs.push_back(recordAdd);
-        cout << "recordAdd: " << recordAdd << endl;
         root->isLeaf = true;
         root->size = 1;
     }
@@ -821,27 +813,11 @@ Node *BPTree::getRoot()
 }
 
 // Get number of nodes
-// void BPTree::getNoOfNodes(Node *cursor, int *count)
-// {
-//     if (cursor != NULL)
-//     {
-//         (*count)++;
-//         if (cursor->isLeaf != true)
-//         {
-//             for (int i = 0; i < cursor->size + 1; i++)
-//             {
-//                 getNoOfNodes((Node *)cursor->ptrs[i].nodePtr,count);
-//             }
-//         }
-//     }
-// }
-
 void BPTree::getNoOfNodes(Node *cursor, int *size)
 {
     if (cursor != NULL)
     {
         (*size)++;
-        cout <<"size:"<<*size<<endl;
         if (cursor->isLeaf != true)
         {
             for (int i = 0; i < cursor->size + 1; i++)

@@ -108,11 +108,6 @@ std::vector<std::string> Storage::getBlockContent(int blockIdx) {
         std::memcpy(tconst, p, 10);
         content.push_back(std::string((char *) tconst));
     }
-    cout <<"returned content of block:\n";
-    for (int j=0;j<content.size();j++){
-            cout << content[j]<<", ";
-        }
-    cout <<"\n";
     return content;
 }
 
@@ -242,7 +237,6 @@ std::byte* Storage::insertRecord(Record r) {
     if (this->getBlockOffset(this->headPtr) + this->recordSize > blockSize) {
         this->headPtr = this->storagePtr + this->usedBlocks * this->blockSize;
     }
-    std::cout << "returned recordAdd: " <<startPtr <<std::endl;
 
     // Update used size
     this->usedSize += this->recordSize;
