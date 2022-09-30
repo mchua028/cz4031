@@ -209,10 +209,10 @@ void BPTree::insert(int x, void *recordAdd, int MAX)
     }
 }
 
-// Insert Operation
+// Insert Operation          x:newleaf 1st key, cursor: parent, child:newleaf
 void BPTree::insertInternal(int x, Node *cursor, Node *child, int MAX)
 {
-    if (cursor->size < MAX)
+    if (cursor->size < MAX) // if parent is not full
     {
         int i = 0;
         while (x > cursor->key[i] && i < cursor->size)
@@ -229,7 +229,7 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child, int MAX)
         cursor->size++;
         cursor->ptr[i + 1] = child;
     }
-    else
+    else // if parent is full
     {
         Node *newInternal = new Node(MAX);
         int virtualKey[MAX + 1];
