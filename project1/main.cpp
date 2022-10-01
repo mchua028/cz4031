@@ -131,12 +131,11 @@ void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey){
 
 }
 void experiment5(Storage &storage, BPTree &bptree, int key) {
-    cout << "Experiment 5" << endl;
+    cout << "---Experiment 5---" << endl;
     vector<byte *> recordPtrs=bptree.searchRecords(key);
     for (int j = 0; j < recordPtrs.size(); j++)
     {
         Record r;
-        cout << "fetch recordAdd:" << recordPtrs[j] <<endl;
         r=get<0>(storage.getRecord(recordPtrs[j]));
         if (r.numVotes == 1000) {
             cout << "Record with numvotes = 1000: " << get<0>(storage.getRecord(recordPtrs[j])).tconst << endl;                

@@ -41,7 +41,7 @@ BPTree::~BPTree()
 // recursively delete nodes of bptree
 void BPTree::cleanUp(Node *cursor)
 {
-    cout << "Cleaning up bptree" << endl;
+    // cout << "Cleaning up bptree" << endl;
     if (cursor != NULL)
     {
         if (!cursor->isLeaf)
@@ -63,7 +63,7 @@ Node *BPTree::search(int key)
 {
     if (root == NULL)
     {
-        cout << "Tree is empty\n";
+        // cout << "Tree is empty\n";
         return NULL;
     }
     else
@@ -91,11 +91,11 @@ Node *BPTree::search(int key)
         {
             if (cursor->keys[i] == key)
             {
-                cout << "Found\n";
+                // cout << "Found\n";
                 return (Node *)cursor;
             }
         }
-        cout << "Not found\n";
+        // cout << "Not found\n";
         return NULL;
     }
 }
@@ -110,7 +110,7 @@ vector<byte *> BPTree::searchRecords(int key)
     vector<byte *> recordList;
     if (root == NULL)
     {
-        cout << "Tree is empty\n";
+        // cout << "Tree is empty\n";
     }
     else
     {
@@ -155,7 +155,7 @@ vector<byte *> BPTree::searchRecords(int key)
         {
             if (cursor->keys[i] == key)
             {
-                cout << "Found\n";
+                // cout << "Found\n";
                 found = true;
                 recordList = cursor->ptrs[i].recordPtrs;
                 break;
@@ -163,7 +163,7 @@ vector<byte *> BPTree::searchRecords(int key)
         }
         if (!found)
         {
-            cout << "Not found\n";
+            // cout << "Not found\n";
         }
     }
     cout << "Number of index blocks accessed: " << indexes.size() << endl;
@@ -192,7 +192,7 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey)
     vector<byte *> recordList;
     if (root == NULL)
     {
-        cout << "Tree is empty\n";
+        // cout << "Tree is empty\n";
     }
     else
     {
@@ -237,7 +237,7 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey)
         {
             if (cursor->keys[i] >= startKey)
             {
-                cout << "Found first record\n";
+                // cout << "Found first record\n";
                 found = true;
                 recordList = cursor->ptrs[i].recordPtrs;
                 startPos = i;
@@ -262,13 +262,13 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey)
 
                 recordList = cursor->ptrs[0].recordPtrs;
                 startPos = 0;
-                cout << "Found first record\n";
+                // cout << "Found first record\n";
                 found = true;
             }
         }
         if (!found)
         {
-            cout << "No records found in this range\n";
+            // cout << "No records found in this range\n";
         }
         // get all records in the range [startKey,endKey]
         // iterate through current index node
@@ -632,7 +632,7 @@ void BPTree::remove(int x)
     int mergeCount = 0;
     if (root == NULL)
     {
-        cout << "Tree empty\n";
+        // cout << "Tree empty\n";
     }
     else
     {
@@ -672,12 +672,16 @@ void BPTree::remove(int x)
         }
         if (!found)
         {
-            cout << "Not found\n";
+            // cout << "Not found\n";
             return;
         }
         for (int i = pos; i < cursor->size; i++)
         {
             cursor->keys[i] = cursor->keys[i + 1];
+        }
+        for (int i = pos; i < (cursor->size-1); i++)
+        {
+            cursor->ptrs[i] = cursor->ptrs[i + 1];
         }
         cursor->size--;
         if (cursor == root)
@@ -688,7 +692,7 @@ void BPTree::remove(int x)
             }
             if (cursor->size == 0)
             {
-                cout << "Tree died\n";
+                // cout << "Tree died\n";
                 delete[] cursor->keys;
                 delete[] cursor->ptrs;
                 delete cursor;
@@ -696,28 +700,33 @@ void BPTree::remove(int x)
             }
             return;
         }
-        cursor->ptrs[cursor->size] = cursor->ptrs[cursor->size + 1];
-        cursor->ptrs[cursor->size + 1].nodePtr = NULL;
+        //if current leaf node is of min size
         if (cursor->size >= (NODE_KEYS + 1) / 2)
         {
             return;
         }
+        //if current leaf node is not of min size
         if (leftSibling >= 0)
         {
             Node *leftNode = (Node *)parent->ptrs[leftSibling].nodePtr;
+            //merge with left sibling if merged size will be big enough
             if (leftNode->size >= (NODE_KEYS + 1) / 2 + 1)
             {
+                //make space for 1 key from left sibling
                 for (int i = cursor->size; i > 0; i--)
                 {
                     cursor->keys[i] = cursor->keys[i - 1];
                 }
+                for (int i = cursor->size; i > 0; i--)
+                {
+                    cursor->ptrs[i] = cursor->ptrs[i - 1];
+                }
                 cursor->size++;
-                cursor->ptrs[cursor->size] = cursor->ptrs[cursor->size - 1];
-                cursor->ptrs[cursor->size - 1].nodePtr = NULL;
                 cursor->keys[0] = leftNode->keys[leftNode->size - 1];
+                cursor->ptrs[0] = leftNode->ptrs[leftNode->size - 1];
                 leftNode->size--;
-                leftNode->ptrs[leftNode->size].nodePtr = cursor;
-                leftNode->ptrs[leftNode->size + 1].nodePtr = NULL;
+                // leftNode->ptrs[leftNode->size].nodePtr = cursor;
+                // leftNode->ptrs[leftNode->size + 1].nodePtr = NULL;
                 parent->keys[leftSibling] = cursor->keys[0];
                 return;
             }
@@ -728,12 +737,12 @@ void BPTree::remove(int x)
             if (rightNode->size >= (NODE_KEYS + 1) / 2 + 1)
             {
                 cursor->size++;
-                cursor->ptrs[cursor->size] = cursor->ptrs[cursor->size - 1];
-                cursor->ptrs[cursor->size - 1].nodePtr = NULL;
+                // cursor->ptrs[cursor->size] = cursor->ptrs[cursor->size - 1];
+                // cursor->ptrs[cursor->size - 1].nodePtr = NULL;
                 cursor->keys[cursor->size - 1] = rightNode->keys[0];
                 rightNode->size--;
-                rightNode->ptrs[rightNode->size] = rightNode->ptrs[rightNode->size + 1];
-                rightNode->ptrs[rightNode->size + 1].nodePtr = NULL;
+                // rightNode->ptrs[rightNode->size] = rightNode->ptrs[rightNode->size + 1];
+                // rightNode->ptrs[rightNode->size + 1].nodePtr = NULL;
                 for (int i = 0; i < rightNode->size; i++)
                 {
                     rightNode->keys[i] = rightNode->keys[i + 1];
@@ -767,7 +776,7 @@ void BPTree::remove(int x)
             cursor->ptrs[cursor->size].nodePtr = NULL;
             cursor->size += rightNode->size;
             cursor->ptrs[cursor->size] = rightNode->ptrs[rightNode->size];
-            cout << "Merging two leaf nodes\n";
+            // cout << "Merging two leaf nodes\n";
             mergeCount += 1;
             removeInternal(parent->keys[rightSibling - 1], parent, rightNode);
             delete[] rightNode->keys;
@@ -792,7 +801,7 @@ void BPTree::removeInternal(int x, Node *cursor, Node *child)
                 delete[] cursor->keys;
                 delete[] cursor->ptrs;
                 delete cursor;
-                cout << "Changed root node\n";
+                // cout << "Changed root node\n";
                 return;
             }
             else if (cursor->ptrs[0].nodePtr == child)
@@ -804,7 +813,7 @@ void BPTree::removeInternal(int x, Node *cursor, Node *child)
                 delete[] cursor->keys;
                 delete[] cursor->ptrs;
                 delete cursor;
-                cout << "Changed root node\n";
+                // cout << "Changed root node\n";
                 return;
             }
         }
