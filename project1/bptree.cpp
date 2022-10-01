@@ -55,11 +55,11 @@ void *BPTree::search(int x)
         {
             if (cursor->key[i] == x)
             {
-                cout << "Found\n";
+                // cout << "Found\n";
                 return cursor->ptr[i];
             }
         }
-        cout << "Not found\n";
+        // cout << "Not found\n";
         return NULL;
     }
 }

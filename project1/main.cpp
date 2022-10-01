@@ -149,7 +149,7 @@ BPTree read_record(void *memStart, int blkSize, int MAX)
         }
         else
         {
-            return node;
+            memStart = memStart + blkSize;
         }
     }
 
@@ -192,7 +192,7 @@ int main()
         ptr = ptr + 18;
     }*/
 
-    tree.display(tree.getRoot(), 0);
+    // tree.display(tree.getRoot(), 0);
     int height = 0;
     height = tree.get_h(tree.getRoot());
     cout << "height: " << height << endl;
