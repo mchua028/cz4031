@@ -26,6 +26,7 @@ class BPTree
     Node *root;
     void insertInternal(int, Node *, Node *, int);
     Node *findParent(Node *, Node *);
+    int findSmallestKeyInSubtree(Node *);
 
 public:
     BPTree();

@@ -229,7 +229,7 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child, int MAX)
         cursor->size++;
         cursor->ptr[i + 1] = child;
     }
-    else // if parent is full
+    else
     {
         Node *newInternal = new Node(MAX);
         int virtualKey[MAX + 1];
@@ -242,22 +242,38 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child, int MAX)
         {
             virtualPtr[i] = (Node *)cursor->ptr[i];
         }
+        // find position to insert x
         int i = 0, j;
         while (x > virtualKey[i] && i < MAX)
             i++;
-        for (int j = MAX + 1; j > i; j--)
+        // make space for x
+        for (int j = MAX; j > i; j--)
         {
             virtualKey[j] = virtualKey[j - 1];
         }
         virtualKey[i] = x;
-        for (int j = MAX + 2; j > i + 1; j--)
+        // make space for pointer to child
+        for (int j = MAX + 1; j > i + 1; j--)
         {
             virtualPtr[j] = virtualPtr[j - 1];
         }
         virtualPtr[i + 1] = child;
+
         newInternal->IS_LEAF = false;
+
         cursor->size = (MAX + 1) / 2;
         newInternal->size = MAX - (MAX + 1) / 2;
+
+        // assign key and ptrs of cursor
+        for (i = 0; i < cursor->size; i++)
+        {
+            cursor->key[i] = virtualKey[i];
+        }
+        for (i = 0; i < cursor->size + 1; i++)
+        {
+            cursor->ptr[i] = virtualPtr[i];
+        }
+        // assign keys and ptrs of newInternal
         for (i = 0, j = cursor->size + 1; i < newInternal->size; i++, j++)
         {
             newInternal->key[i] = virtualKey[j];
@@ -266,19 +282,22 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child, int MAX)
         {
             newInternal->ptr[i] = virtualPtr[j];
         }
+
         if (cursor == root)
         {
             Node *newRoot = new Node(MAX);
-            newRoot->key[0] = cursor->key[cursor->size];
+            // newRoot->keys[0] = cursor->keys[cursor->size];
+            // get the smallest key found in the subtree under newInternal
+            newRoot->key[0] = findSmallestKeyInSubtree(newInternal);
             newRoot->ptr[0] = cursor;
             newRoot->ptr[1] = newInternal;
             newRoot->IS_LEAF = false;
             newRoot->size = 1;
             root = newRoot;
         }
-        else
+        else // there are more than 2 levels in the current tree
         {
-            insertInternal(cursor->key[cursor->size], findParent(root, cursor), newInternal, MAX);
+            insertInternal(findSmallestKeyInSubtree(newInternal), findParent(root, cursor), newInternal, MAX);
         }
     }
 }
@@ -371,4 +390,16 @@ void BPTree::get_size(Node *cursor, int *size)
 Node *BPTree::getRoot()
 {
     return root;
+}
+
+// find smallest key in subtree
+int BPTree::findSmallestKeyInSubtree(Node *cursor)
+{
+    int smallestKey;
+    while (!cursor->IS_LEAF)
+    {
+        cursor = (Node *)cursor->ptr[0];
+    }
+    smallestKey = cursor->key[0];
+    return smallestKey;
 }
