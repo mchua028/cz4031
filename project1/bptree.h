@@ -37,4 +37,5 @@ public:
     int get_h(Node *);
     void get_size(Node *, int *);
     Node *getRoot();
+    void cleanUp(Node *);
 };
