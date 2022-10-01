@@ -29,21 +29,23 @@ class BPTree
 {
 private:
     Node *root;
-    void insertInternal(int, Node *, Node *, int);
+    int NODE_KEYS;
+    void insertInternal(int, Node *, Node *);
     int findSmallestKeyInSubtree(Node *);
     Node *findParent(Node *, Node *);
     void removeInternal(int, Node *, Node *);
 
 public:
-    BPTree();
+    BPTree(int);
     ~BPTree();
-    void insert(int key, byte *recordPtr, int NODE_KEYS);
+    void insert(int key, byte *recordPtr);
     Node *search(int key);
     vector<byte *> searchRecords(int key);
-    vector<byte *> searchRange(int startKey, int endKey, int NODE_KEYS);
-    void remove(int x, int NODE_KEYS);
+    vector<byte *> searchRange(int startKey, int endKey);
+    void remove(int x);
     void display(Node *, int);
     Node *getRoot();
+    int getNodeKeys();
     void getNoOfNodes(Node *, int *);
     int getHeight(Node *);
     void getRootContents();

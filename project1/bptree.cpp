@@ -27,9 +27,10 @@ Node::Node(int i)
     ptrs = new ptrs_struct[i + 1];
 }
 
-BPTree::BPTree()
+BPTree::BPTree(int BLOCK_SIZE)
 {
     root = NULL;
+    NODE_KEYS=(BLOCK_SIZE-32)/36;
 }
 
 BPTree::~BPTree()
@@ -180,7 +181,7 @@ vector<byte *> BPTree::searchRecords(int key)
 }
 
 // search Range operation
-vector<byte *> BPTree::searchRange(int startKey, int endKey, int NODE_KEYS)
+vector<byte *> BPTree::searchRange(int startKey, int endKey)
 {
     bool found = false;
     bool end = false;
@@ -337,7 +338,7 @@ vector<byte *> BPTree::searchRange(int startKey, int endKey, int NODE_KEYS)
 }
 
 // Insert Operation
-void BPTree::insert(int key, byte *recordAdd, int NODE_KEYS)
+void BPTree::insert(int key, byte *recordAdd)
 {
     if (root == NULL) // if no root
     {
@@ -466,14 +467,14 @@ void BPTree::insert(int key, byte *recordAdd, int NODE_KEYS)
             }
             else // there exist at least 2 levels, insert a new key into internal nodes
             {
-                insertInternal(newLeaf->keys[0], parent, newLeaf,NODE_KEYS);
+                insertInternal(newLeaf->keys[0], parent, newLeaf);
             }
         }
     }
 }
 
 // Insert Operation
-void BPTree::insertInternal(int x, Node *cursor, Node *child, int NODE_KEYS)
+void BPTree::insertInternal(int x, Node *cursor, Node *child)
 {
     // there is still space in the parent node
     if (cursor->size < NODE_KEYS)
@@ -562,7 +563,7 @@ void BPTree::insertInternal(int x, Node *cursor, Node *child, int NODE_KEYS)
         }
         else // there are more than 2 levels in the current tree
         {
-            insertInternal(findSmallestKeyInSubtree(newInternal), findParent(root, cursor), newInternal,NODE_KEYS);
+            insertInternal(findSmallestKeyInSubtree(newInternal), findParent(root, cursor), newInternal);
         }
     }
 }
@@ -626,7 +627,7 @@ void BPTree::display(Node *cursor, int level)
         }
     }
 }
-void BPTree::remove(int x, int NODE_KEYS)
+void BPTree::remove(int x)
 {
     if (root == NULL)
     {
@@ -810,6 +811,11 @@ void BPTree::removeInternal(int x, Node *cursor, Node *child)
 Node *BPTree::getRoot()
 {
     return root;
+}
+
+//Get NODE_KEYS
+int BPTree::getNodeKeys(){
+    return NODE_KEYS;
 }
 
 // Get number of nodes

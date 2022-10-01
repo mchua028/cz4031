@@ -11,7 +11,7 @@ const int SIZE = 1e8;
 const int BLOCK_SIZE = 200;
 const int RECORD_SIZE = 18;
 
-void importData(Storage &storage, BPTree &bptree, int NODE_KEYS, const char* filename) {
+void importData(Storage &storage, BPTree &bptree, const char* filename) {
     std::ifstream dataFile(filename);
     std::string line;
 
@@ -28,7 +28,7 @@ void importData(Storage &storage, BPTree &bptree, int NODE_KEYS, const char* fil
 
         std::byte *recordPtr = storage.insertRecord(r);
         //insert each record into bptree
-        bptree.insert(r.numVotes,recordPtr,NODE_KEYS);
+        bptree.insert(r.numVotes,recordPtr);
         bptree.display(bptree.getRoot(),0);
     }
 
@@ -43,9 +43,9 @@ void experiment1(Storage &storage) {
     std::cout << "Size of database: " << storage.getUsedSize() / 1000000.0 << " MB\n";
 }
 
-void experiment2(BPTree &bptree, int NODE_KEYS){
+void experiment2(BPTree &bptree){
     std::cout << "---Experiment 2---\n";
-    std::cout <<"parameter n: "<< NODE_KEYS<<endl;
+    std::cout <<"parameter n: "<< bptree.getNodeKeys()<<endl;
     int noOfNodes=0;
     bptree.getNoOfNodes(bptree.getRoot(),&noOfNodes);
     std::cout <<"Number of nodes of bplus tree:"<<noOfNodes<<endl;
@@ -84,9 +84,9 @@ void experiment3(Storage &storage, BPTree &bptree, int key){
     cout <<"Average rating: "<< totalAverageRating / recordPtrs.size() <<endl;
 }
 
-void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey, int NODE_KEYS){
+void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey){
     std::cout << "---Experiment 4---\n";
-    vector<byte *> recordPtrs=bptree.searchRange(startKey,endKey,NODE_KEYS);
+    vector<byte *> recordPtrs=bptree.searchRange(startKey,endKey);
 
     vector<int> blockIndexes;
     float avgRating=0;
@@ -131,18 +131,17 @@ void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey, int
 
 int main() {
     Storage storage(SIZE, BLOCK_SIZE, RECORD_SIZE);
-    BPTree bptree;
-    int NODE_KEYS=(BLOCK_SIZE-16)/20;
+    BPTree bptree(BLOCK_SIZE);
     
-    importData(storage, bptree, NODE_KEYS, "./data2.tsv");
+    importData(storage, bptree, "./data2.tsv");
 
     experiment1(storage);
 
-    experiment2(bptree,NODE_KEYS);
+    experiment2(bptree);
 
     experiment3(storage, bptree, 262);
 
-    experiment4(storage, bptree, 100,2000, NODE_KEYS);
+    experiment4(storage, bptree, 100,2000);
 
     return 0;
 }
