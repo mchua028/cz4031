@@ -403,3 +403,208 @@ int BPTree::findSmallestKeyInSubtree(Node *cursor)
     smallestKey = cursor->key[0];
     return smallestKey;
 }
+
+void BPTree::remove(int x, int MAX)
+{
+    int mergeCount = 0;
+    if (root == NULL)
+    {
+        cout << "Tree empty\n";
+    }
+    else
+    {
+        Node *cursor = root;
+        Node *parent;
+        int leftSibling, rightSibling;
+        while (cursor->IS_LEAF == false)
+        {
+            for (int i = 0; i < cursor->size; i++)
+            {
+                parent = cursor;
+                leftSibling = i - 1;
+                rightSibling = i + 1;
+                if (x < (cursor->key)[i])
+                {
+                    cursor = (Node *)cursor->ptr[i];
+                    break;
+                }
+                if (i == cursor->size - 1)
+                {
+                    leftSibling = i;
+                    rightSibling = i + 2;
+                    cursor = (Node *)cursor->ptr[i + 1];
+                    break;
+                }
+            }
+        }
+        bool found = false;
+        int pos;
+        for (pos = 0; pos < cursor->size; pos++)
+        {
+            if (cursor->key[pos] == x)
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            cout << "Not found\n";
+            return;
+        }
+        for (int i = pos; i < cursor->size; i++)
+        {
+            cursor->key[i] = cursor->key[i + 1];
+        }
+        cursor->size--;
+        if (cursor == root)
+        {
+            for (int i = 0; i < MAX + 1; i++)
+            {
+                cursor->ptr[i] = NULL;
+            }
+            if (cursor->size == 0)
+            {
+                cout << "Tree died\n";
+                delete[] cursor->key;
+                delete[] cursor->ptr;
+                delete cursor;
+                root = NULL;
+            }
+            return;
+        }
+        cursor->ptr[cursor->size] = cursor->ptr[cursor->size + 1];
+        cursor->ptr[cursor->size + 1] = NULL;
+        if (cursor->size >= (MAX + 1) / 2)
+        {
+            return;
+        }
+        if (leftSibling >= 0)
+        {
+            Node *leftNode = (Node *)parent->ptr[leftSibling];
+            if (leftNode->size >= (MAX + 1) / 2 + 1)
+            {
+                for (int i = cursor->size; i > 0; i--)
+                {
+                    cursor->key[i] = cursor->key[i - 1];
+                }
+                cursor->size++;
+                cursor->ptr[cursor->size] = cursor->ptr[cursor->size - 1];
+                cursor->ptr[cursor->size - 1] = NULL;
+                cursor->key[0] = leftNode->key[leftNode->size - 1];
+                leftNode->size--;
+                leftNode->ptr[leftNode->size] = cursor;
+                leftNode->ptr[leftNode->size + 1] = NULL;
+                parent->key[leftSibling] = cursor->key[0];
+                return;
+            }
+        }
+        if (rightSibling <= parent->size)
+        {
+            Node *rightNode = (Node *)parent->ptr[rightSibling];
+            if (rightNode->size >= (MAX + 1) / 2 + 1)
+            {
+                cursor->size++;
+                cursor->ptr[cursor->size] = cursor->ptr[cursor->size - 1];
+                cursor->ptr[cursor->size - 1] = NULL;
+                cursor->key[cursor->size - 1] = rightNode->key[0];
+                rightNode->size--;
+                rightNode->ptr[rightNode->size] = rightNode->ptr[rightNode->size + 1];
+                rightNode->ptr[rightNode->size + 1] = NULL;
+                for (int i = 0; i < rightNode->size; i++)
+                {
+                    rightNode->key[i] = rightNode->key[i + 1];
+                }
+                parent->key[rightSibling - 1] = rightNode->key[0];
+                return;
+            }
+        }
+        if (leftSibling >= 0)
+        {
+            Node *leftNode = (Node *)parent->ptr[leftSibling];
+            for (int i = leftNode->size, j = 0; j < cursor->size; i++, j++)
+            {
+                leftNode->key[i] = cursor->key[j];
+            }
+            leftNode->ptr[leftNode->size] = NULL;
+            leftNode->size += cursor->size;
+            leftNode->ptr[leftNode->size] = cursor->ptr[cursor->size];
+            removeInternal(parent->key[leftSibling], parent, cursor);
+            delete[] cursor->key;
+            delete[] cursor->ptr;
+            delete cursor;
+        }
+        else if (rightSibling <= parent->size)
+        {
+            Node *rightNode = (Node *)parent->ptr[rightSibling];
+            for (int i = cursor->size, j = 0; j < rightNode->size; i++, j++)
+            {
+                cursor->key[i] = rightNode->key[j];
+            }
+            cursor->ptr[cursor->size] = NULL;
+            cursor->size += rightNode->size;
+            cursor->ptr[cursor->size] = rightNode->ptr[rightNode->size];
+            cout << "Merging two leaf nodes\n";
+            mergeCount += 1;
+            removeInternal(parent->key[rightSibling - 1], parent, rightNode);
+            delete[] rightNode->key;
+            delete[] rightNode->ptr;
+            delete rightNode;
+        }
+    }
+    cout << "Merge Count: " << mergeCount << endl;
+}
+void BPTree::removeInternal(int x, Node *cursor, Node *child)
+{
+    if (cursor == root)
+    {
+        if (cursor->size == 1)
+        {
+            if (cursor->ptr[1] == child)
+            {
+                delete[] child->key;
+                delete[] child->ptr;
+                delete child;
+                root = (Node *)cursor->ptr[0];
+                delete[] cursor->key;
+                delete[] cursor->ptr;
+                delete cursor;
+                cout << "Changed root node\n";
+                return;
+            }
+            else if (cursor->ptr[0] == child)
+            {
+                delete[] child->key;
+                delete[] child->ptr;
+                delete child;
+                root = (Node *)(cursor->ptr)[1];
+                delete[] cursor->key;
+                delete[] cursor->ptr;
+                delete cursor;
+                cout << "Changed root node\n";
+                return;
+            }
+        }
+    }
+}
+
+// get root contents
+void BPTree::getRootContents()
+{
+    for (int i = 0; i < (root->size); i++)
+    {
+        cout << root->key[i] << ", ";
+    }
+    cout << "\n";
+}
+
+// get first child node contents
+void BPTree::getRootChildContents()
+{
+    Node *firstChild = (Node *)(root->ptr[0]);
+    for (int i = 0; i < (firstChild->size); i++)
+    {
+        cout << firstChild->key[i] << ", ";
+    }
+    cout << "\n";
+}

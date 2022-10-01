@@ -37,5 +37,9 @@ public:
     int get_h(Node *);
     void get_size(Node *, int *);
     Node *getRoot();
+    void remove(int x, int MAX);
+    void removeInternal(int x, Node *cursor, Node *child);
+    void getRootContents();
+    void getRootChildContents();
     void cleanUp(Node *);
 };
