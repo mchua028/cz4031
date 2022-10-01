@@ -12,7 +12,7 @@ using namespace std;
 
 // Global variables
 int memSize = 100000000;
-int blkSize = 200;
+int blkSize = 500;
 
 // block structure declaration
 struct block
@@ -157,6 +157,21 @@ BPTree read_record(void *memStart, int blkSize, int MAX, int *blkUsed)
             startFreeSpace = (memStart + sizeof(bool) * 2 + sizeof(int) * 3);
 
             (*blkUsed)++;
+
+            *inUse = true;
+            for (int i = 0; i < 10; i++)
+            {
+                *(char *)(startFreeSpace + i) = record[0][i];
+            }
+            startFreeSpace = startFreeSpace + 10;
+            *(float *)startFreeSpace = stof(record[1]);
+            startFreeSpace = startFreeSpace + 4;
+            *(int *)startFreeSpace = stoi(record[2]);
+            node.insert(stoi(record[2]), startFreeSpace, MAX);
+            *BytesLeft = *BytesLeft - recordSize;
+            *offSetToFreeSpaceInBlk = *offSetToFreeSpaceInBlk + recordSize;
+
+            startFreeSpace = startFreeSpace + 4;
         }
     }
     cout << "last record inserted: " << record[0] << endl;
@@ -179,7 +194,17 @@ int main()
     //
     int blkUsed = 0;
     BPTree tree = read_record(start, blkSize, max, &blkUsed);
-    cout << "number of bock used: " << blkUsed << endl;
+    cout << "number of block used: " << blkUsed << endl;
+
+    // 2nd approach
+    blkUsed = 0;
+    while ((*(bool *)(start + sizeof(int) + sizeof(bool)) == true) && (*(bool *)(start + sizeof(int)) == true))
+    {
+        blkUsed++;
+        start = start + blkSize;
+    }
+
+    cout << "number of block used: " << blkUsed << endl;
 
     // tree.display(tree.getRoot(), 0);
     int height = 0;
