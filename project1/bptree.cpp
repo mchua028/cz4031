@@ -21,7 +21,7 @@ BPTree::BPTree()
 
 BPTree::~BPTree()
 {
-    delete (root);
+    // delete (root);
 }
 
 // Search operation

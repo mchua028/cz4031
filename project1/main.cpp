@@ -190,21 +190,21 @@ BPTree read_record(void *memStart, int blkSize, int MAX, int *blkUsed)
     std::cout << "Size of database: " << (storage.getUsedSize() + noOfNodes * BLOCK_SIZE) / 1000000.0 << " MB\n";
 }*/
 
-/*void experiment2(BPTree &bptree)
+void experiment2(BPTree bptree)
 {
     std::cout << "---Experiment 2---\n";
-    std::cout << "parameter n: " << bptree.getNodeKeys() << endl;
+    // std::cout << "parameter n: " << bptree.getNodeKeys() << endl;
     int noOfNodes = 0;
-    bptree.getNoOfNodes(bptree.getRoot(), &noOfNodes);
+    bptree.get_size(bptree.getRoot(), &noOfNodes);
     std::cout << "Number of nodes of bplus tree:" << noOfNodes << endl;
-    std::cout << "Height of bplus tree: " << bptree.getHeight(bptree.getRoot()) << endl;
+    std::cout << "Height of bplus tree: " << bptree.get_h(bptree.getRoot()) << endl;
     std::cout << "Root contents:\n";
     bptree.getRootContents();
     std::cout << "First child node contents:\n";
     bptree.getRootChildContents();
 }
 
-void experiment3(Storage &storage, BPTree &bptree, int key)
+/*void experiment3(Storage &storage, BPTree &bptree, int key)
 {
     std::cout << "---Experiment 3---\n";
 
@@ -234,9 +234,9 @@ void experiment3(Storage &storage, BPTree &bptree, int key)
     }
 
     cout << "Average rating: " << totalAverageRating / recordPtrs.size() << endl;
-}
+}*/
 
-void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey)
+/*void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey)
 {
     std::cout << "---Experiment 4---\n";
     vector<byte *> recordPtrs = bptree.searchRange(startKey, endKey);
@@ -285,6 +285,7 @@ void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey)
     avgRating /= recordPtrs.size();
     cout << "Average rating: " << avgRating << endl;
 }
+
 void experiment5(Storage &storage, BPTree &bptree, int startKey, int endKey)
 {
     cout << "Experiment 5" << endl;
@@ -364,11 +365,11 @@ int main()
     }
 
     // Exp
-    /*experiment1(storage, bptree);
+    // experiment1(storage, bptree);
 
-    experiment2(bptree);
+    experiment2(tree);
 
-    experiment3(storage, bptree, 262);
+    /*experiment3(storage, bptree, 262);
 
     experiment4(storage, bptree, 100, 2000);
 
