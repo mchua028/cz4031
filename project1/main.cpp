@@ -12,7 +12,7 @@ using namespace std;
 
 // Global variables
 int memSize = 100000000;
-int blkSize = 500;
+int blkSize = 200;
 
 // block structure declaration
 struct block
@@ -80,7 +80,7 @@ void *init_disk()
     return memStart;
 }
 
-BPTree read_record(void *memStart, int blkSize, int MAX)
+BPTree read_record(void *memStart, int blkSize, int MAX, int *blkUsed)
 {
 
     // Create a text string, which is used to output the text file
@@ -107,6 +107,9 @@ BPTree read_record(void *memStart, int blkSize, int MAX)
     offSetToFreeSpaceInBlk = (int *)(memStart + sizeof(bool) * 2 + sizeof(int));
     BytesLeft = (int *)(memStart + sizeof(bool) * 2 + sizeof(int) * 2);
     startFreeSpace = (memStart + sizeof(bool) * 2 + sizeof(int) * 3);
+
+    (*blkUsed)++;
+
     // Use a while loop together with the getline() function to read the file line by line
     // skip first line using 1 read
     getline(MyReadFile, line);
@@ -131,24 +134,20 @@ BPTree read_record(void *memStart, int blkSize, int MAX)
             {
                 *(char *)(startFreeSpace + i) = record[0][i];
             }
-            // memcpy(startFreeSpace, &(record[0]), 10);
             startFreeSpace = startFreeSpace + 10;
             *(float *)startFreeSpace = stof(record[1]);
             startFreeSpace = startFreeSpace + 4;
             *(int *)startFreeSpace = stoi(record[2]);
-            //
-            // cout << "address of record: " << startFreeSpace << endl;
-            // adding to bptree, requires changing for final merge, change startFreeSpace to address of the record
-            // cout << "inserting key: " << stoi(record[2]) << endl;
             node.insert(stoi(record[2]), startFreeSpace, MAX);
             *BytesLeft = *BytesLeft - recordSize;
             *offSetToFreeSpaceInBlk = *offSetToFreeSpaceInBlk + recordSize;
-            // break;
 
             startFreeSpace = startFreeSpace + 4;
         }
         else
         {
+            *isFull = true;
+
             memStart = memStart + blkSize;
             blkID = (int *)(memStart);
             isFull = (bool *)(memStart + sizeof(int));
@@ -156,6 +155,8 @@ BPTree read_record(void *memStart, int blkSize, int MAX)
             offSetToFreeSpaceInBlk = (int *)(memStart + sizeof(bool) * 2 + sizeof(int));
             BytesLeft = (int *)(memStart + sizeof(bool) * 2 + sizeof(int) * 2);
             startFreeSpace = (memStart + sizeof(bool) * 2 + sizeof(int) * 3);
+
+            (*blkUsed)++;
         }
     }
     cout << "last record inserted: " << record[0] << endl;
@@ -176,28 +177,9 @@ int main()
     //
     // max = 3;
     //
-    // cout << "max: " << max << endl;
-    BPTree tree = read_record(start, blkSize, max);
-
-    /*cout << "blk id: " << *(int *)ptr << endl;
-    cout << "isFull: " << *(bool *)(ptr + 4) << endl;
-    cout << "inUse: " << *(bool *)(ptr + 5) << endl;
-    cout << "offset to start of free space: " << *(int *)(ptr + 6) << endl;
-    cout << "Bytes left in block: " << *(int *)(ptr + 10) << endl;
-    ptr = ptr + 14;
-    for (int i = 0; i < 30; i++)
-    {
-
-        for (int i = 0; i < 10; i++)
-        {
-            cout << (*(char *)(ptr + i));
-        }
-        cout << endl
-             << *(float *)(ptr + 10) << endl
-             << *(int *)(ptr + 14) << endl
-             << endl;
-        ptr = ptr + 18;
-    }*/
+    int blkUsed = 0;
+    BPTree tree = read_record(start, blkSize, max, &blkUsed);
+    cout << "number of bock used: " << blkUsed << endl;
 
     // tree.display(tree.getRoot(), 0);
     int height = 0;
