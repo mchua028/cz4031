@@ -64,6 +64,64 @@ void *BPTree::search(int x)
     }
 }
 
+// Search operation for experiment 3, prints out node content
+void *BPTree::search(int x, int exp, int *nodeCount)
+{
+    if (root == NULL)
+    {
+        cout << "Tree is empty\n";
+        return NULL;
+    }
+    else
+    {
+        Node *cursor = root;
+        while (cursor->IS_LEAF == false)
+        {
+            // prints current node keys
+            (*nodeCount)++;
+            cout << "Content of current node: " << endl;
+            for (int i = 0; i < cursor->size; i++)
+            {
+                cout << cursor->key[i] << " ";
+            }
+            cout << endl;
+
+            for (int i = 0; i < cursor->size; i++)
+            {
+                if (x < cursor->key[i])
+                {
+                    cursor = (Node *)cursor->ptr[i];
+                    break;
+                }
+                if (i == cursor->size - 1)
+                {
+                    cursor = (Node *)cursor->ptr[i + 1];
+                    break;
+                }
+            }
+        }
+        for (int i = 0; i < cursor->size; i++)
+        {
+            if (cursor->key[i] == x)
+            {
+
+                // prints current node keys
+                (*nodeCount)++;
+                cout << "Content of current node(leaf node): " << endl;
+                for (int i = 0; i < cursor->size; i++)
+                {
+                    cout << cursor->key[i] << " ";
+                }
+                cout << endl;
+                // cout << "Found\n";
+                return cursor->ptr[i];
+            }
+        }
+        // cout << "Not found\n";
+        return NULL;
+    }
+}
+
 // Insert Operation
 void BPTree::insert(int x, void *recordAdd, int MAX)
 {

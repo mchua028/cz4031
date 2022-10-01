@@ -167,7 +167,7 @@ BPTree read_record(void *memStart, int blkSize, int MAX, int *blkUsed)
             *(float *)startFreeSpace = stof(record[1]);
             startFreeSpace = startFreeSpace + 4;
             *(int *)startFreeSpace = stoi(record[2]);
-            node.insert(stoi(record[2]), startFreeSpace, MAX);
+            node.insert(stoi(record[2]), startFreeSpace - 14, MAX);
             *BytesLeft = *BytesLeft - recordSize;
             *offSetToFreeSpaceInBlk = *offSetToFreeSpaceInBlk + recordSize;
 
@@ -204,37 +204,62 @@ void experiment2(BPTree bptree)
     bptree.getRootChildContents();
 }
 
-/*void experiment3(Storage &storage, BPTree &bptree, int key)
+void experiment3(void *start, BPTree bptree, int key)
 {
     std::cout << "---Experiment 3---\n";
 
-    vector<byte *> recordPtrs = bptree.searchRecords(key);
-
-    vector<Record> records;
-    vector<int> blockIndices;
-    std::tie(records, blockIndices) = storage.getRecords(recordPtrs);
-
+    // part 1
+    int nodeCount = 0;
+    cout << "the number and the content of index nodes the process accesses: " << endl;
+    // retrieve the address of the vector of the record, search function prints the node content
+    // vector<void *> *records = (vector<void *> *)bptree.search(key, 3, &nodeCount);
+    void *records = bptree.search(key, 3, &nodeCount);
+    cout << "number of node accessed: " << nodeCount << endl;
+    cout << endl;
     float totalAverageRating = 0;
-    for (Record r : records)
+    // printing the records
+    void *rAdd;
+    if (records != NULL)
     {
-        totalAverageRating += r.averageRating;
-    }
-
-    cout << "Number of blocks accessed:" << blockIndices.size() << endl;
-
-    // Print the content of the first 5 accessed blocks
-    for (int i = 0; i < min((int)blockIndices.size(), 5); i++)
-    {
-        auto blockContent = storage.getBlockContent(blockIndices[i]);
-        for (auto tconst : blockContent)
+        for (int i = 0; i < ((vector<void *> *)records)->size(); i++)
         {
-            cout << tconst << ", ";
+            rAdd = ((vector<void *> *)records)->at(i);
+            for (int j = 0; j < 10; j++)
+            {
+                cout << (*(char *)(rAdd + j));
+            }
+            cout << endl
+                 << *(float *)(rAdd + 10) << endl
+                 << *(int *)(rAdd + 14) << endl
+                 << endl;
+            // increment totalaveragerating
+            totalAverageRating += *(float *)(rAdd + 10);
         }
-        cout << '\n';
     }
+    // print avarage rating
+    cout << "Average rating: " << totalAverageRating / ((vector<void *> *)records)->size() << endl;
 
-    cout << "Average rating: " << totalAverageRating / recordPtrs.size() << endl;
-}*/
+    // number of memory block accessed
+    int blk = (records - start) / blkSize;
+    cout << "accessing memorry block: " << blk + 1 << endl;
+    cout << "content of the block: " << endl;
+    void *ptr = start + blk * blkSize;
+    // Block ID
+    cout << "block id: " << *(int *)ptr << endl;
+    // isFull flag
+    cout << "isFull: " << *(bool *)(ptr + sizeof(int)) << endl;
+    // inUse flag
+    cout << "inUse: " << *(bool *)(ptr + sizeof(int) + sizeof(bool)) << endl;
+    // offset to start of free space in block
+    cout << "offset to start of free space in block: " << *(int *)(ptr + sizeof(int) + sizeof(bool) * 2) << endl;
+    // Byte left in block
+    cout << "Byte left in block: " << *(int *)(ptr + sizeof(int) * 2 + sizeof(bool) * 2) << endl;
+    cout << "records: " << endl;
+    /*for (int j = 0; j < blkSize - sizeof(int) * 3 - sizeof(bool) * 2; j++)
+    {
+
+    }*/
+}
 
 /*void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey)
 {
@@ -369,9 +394,9 @@ int main()
 
     experiment2(tree);
 
-    /*experiment3(storage, bptree, 262);
+    experiment3(start, tree, 500);
 
-    experiment4(storage, bptree, 100, 2000);
+    /*experiment4(storage, bptree, 100, 2000);
 
     experiment5(storage, bptree, 100, 2000);*/
 
