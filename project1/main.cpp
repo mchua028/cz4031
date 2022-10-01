@@ -29,6 +29,7 @@ void importData(Storage &storage, BPTree &bptree, const char* filename) {
         std::byte *recordPtr = storage.insertRecord(r);
         //insert each record into bptree
         bptree.insert(r.numVotes,recordPtr);
+        std::cout<<"first BPTREE"<<endl;
         bptree.display(bptree.getRoot(),0);
     }
 
@@ -72,18 +73,18 @@ void experiment3(Storage &storage, BPTree &bptree, int key){
         totalAverageRating += r.averageRating;
     }
     
-    cout << "Number of blocks accessed:" << blockIndices.size() << endl;
+    std::cout << "Number of blocks accessed:" << blockIndices.size() << endl;
 
     // Print the content of the first 5 accessed blocks
     for (int i = 0; i < min((int) blockIndices.size(), 5); i++) {
         auto blockContent = storage.getBlockContent(blockIndices[i]);
         for (auto tconst: blockContent) {
-            cout << tconst << ", ";
+            std::cout << tconst << ", ";
         }
-        cout << '\n';
+        std::cout << '\n';
     }
 
-    cout <<"Average rating: "<< totalAverageRating / recordPtrs.size() <<endl;
+    std::cout <<"Average rating: "<< totalAverageRating / recordPtrs.size() <<endl;
 }
 
 void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey){
@@ -114,56 +115,67 @@ void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey){
         }
 
     }
-    cout <<"Number of blocks accessed:"<<blockIndexes.size()<<endl;
+    std::cout <<"Number of blocks accessed:"<<blockIndexes.size()<<endl;
 
     //print contents of block
     for (int i=0;i<blockIndexes.size() && i<5;i++){
-        cout <<"Contents of block "<<blockIndexes[i]<<":\n";
+        std::cout <<"Contents of block "<<blockIndexes[i]<<":\n";
         vector<string> contents=storage.getBlockContent(blockIndexes[i]);
         for (int j=0;j<contents.size();j++){
-            cout << contents[j]<<", ";
+            std::cout << contents[j]<<", ";
         }
-        cout <<"\n";
+        std::cout <<"\n";
     }
     //calculate average rating
     avgRating/=recordPtrs.size();
-    cout <<"Average rating: "<<avgRating<<endl;
+    std::cout <<"Average rating: "<<avgRating<<endl;
 
 }
 void experiment5(Storage &storage, BPTree &bptree, int key) {
-    cout << "---Experiment 5---" << endl;
+    std::cout << "---Experiment 5---" << endl;
     vector<byte *> recordPtrs=bptree.searchRecords(key);
     for (int j = 0; j < recordPtrs.size(); j++)
     {
         Record r;
         r=get<0>(storage.getRecord(recordPtrs[j]));
-        if (r.numVotes == 1000) {
-            cout << "Record with numvotes = 1000: " << get<0>(storage.getRecord(recordPtrs[j])).tconst << endl;                
-            storage.deleteRecord(recordPtrs[j]);
-            bptree.remove(j);
-        }
+        std::cout << "Record with numvotes = "<<key<<": " << get<0>(storage.getRecord(recordPtrs[j])).tconst << endl;                
+        storage.deleteRecord(recordPtrs[j]);
+            
     }
+    bptree.remove(key);
     int size = 0;
     bptree.getNoOfNodes(bptree.getRoot(), &size);
-    cout << "No. of nodes: " << size << endl;
-    cout << "Root Contents" << endl;
+    std::cout << "No. of nodes: " << size << endl;
+    std::cout << "Root Contents" << endl;
     bptree.getRootContents();
-    cout << "Root Child Contents" << endl;
+    std::cout << "Root Child Contents" << endl;
     bptree.getRootChildContents();
+    std::cout <<"BPTREE after removing "<<key<<":"<<endl;
+    bptree.display(bptree.getRoot(),0);
 }
 int main() {
     Storage storage(SIZE, BLOCK_SIZE, RECORD_SIZE);
     BPTree bptree(BLOCK_SIZE);
     
-    importData(storage, bptree, "./data.tsv");
+    importData(storage, bptree, "./data2.tsv");
 
-    experiment1(storage, bptree);
+    // experiment1(storage, bptree);
 
-    experiment2(bptree);
+    // experiment2(bptree);
 
-    experiment3(storage, bptree, 500);
+    // experiment3(storage, bptree, 154);
 
-    experiment4(storage, bptree, 30000,40000);
+    // experiment4(storage, bptree, 30000,40000);
+
+    experiment5(storage, bptree, 6018);
+
+    experiment5(storage, bptree, 2127);
+
+    experiment5(storage, bptree, 1807);
+
+    experiment5(storage, bptree, 1645);
+
+    experiment5(storage, bptree, 1342);
 
     experiment5(storage, bptree, 1000);
 
