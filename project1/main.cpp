@@ -128,7 +128,28 @@ void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey){
     cout <<"Average rating: "<<avgRating<<endl;
 
 }
-
+void experiment5(Storage &storage, BPTree &bptree, int startKey, int endKey) {
+    cout << "Experiment 5" << endl;
+    vector<byte *> recordPtrs=bptree.searchRange(startKey,endKey);
+    for (int j = 0; j < recordPtrs.size(); j++)
+    {
+        Record r;
+        cout << "fetch recordAdd:" << recordPtrs[j] <<endl;
+        r=get<0>(storage.getRecord(recordPtrs[j]));
+        if (r.numVotes == 1000) {
+            cout << "Record with numvotes = 1000: " << get<0>(storage.getRecord(recordPtrs[j])).tconst << endl;                
+            storage.deleteRecord(recordPtrs[j]);
+            bptree.remove(j);
+        }
+    }
+    int size = 0;
+    bptree.getNoOfNodes(bptree.getRoot(), &size);
+    cout << "No. of nodes: " << size << endl;
+    cout << "Root Contents" << endl;
+    bptree.getRootContents();
+    cout << "Root Child Contents" << endl;
+    bptree.getRootChildContents();
+}
 int main() {
     Storage storage(SIZE, BLOCK_SIZE, RECORD_SIZE);
     BPTree bptree(BLOCK_SIZE);
@@ -142,6 +163,8 @@ int main() {
     experiment3(storage, bptree, 262);
 
     experiment4(storage, bptree, 100,2000);
+
+    experiment5(storage, bptree, 100, 2000);
 
     return 0;
 }

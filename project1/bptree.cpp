@@ -629,6 +629,7 @@ void BPTree::display(Node *cursor, int level)
 }
 void BPTree::remove(int x)
 {
+    int mergeCount = 0;
     if (root == NULL)
     {
         cout << "Tree empty\n";
@@ -767,12 +768,14 @@ void BPTree::remove(int x)
             cursor->size += rightNode->size;
             cursor->ptrs[cursor->size] = rightNode->ptrs[rightNode->size];
             cout << "Merging two leaf nodes\n";
+            mergeCount += 1;
             removeInternal(parent->keys[rightSibling - 1], parent, rightNode);
             delete[] rightNode->keys;
             delete[] rightNode->ptrs;
             delete rightNode;
         }
     }
+    cout << "Merge Count: " << mergeCount << endl;
 }
 void BPTree::removeInternal(int x, Node *cursor, Node *child)
 {
