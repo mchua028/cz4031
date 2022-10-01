@@ -196,16 +196,6 @@ int main()
     BPTree tree = read_record(start, blkSize, max, &blkUsed);
     cout << "number of block used: " << blkUsed << endl;
 
-    // 2nd approach
-    blkUsed = 0;
-    while ((*(bool *)(start + sizeof(int) + sizeof(bool)) == true) && (*(bool *)(start + sizeof(int)) == true))
-    {
-        blkUsed++;
-        start = start + blkSize;
-    }
-
-    cout << "number of block used: " << blkUsed << endl;
-
     // tree.display(tree.getRoot(), 0);
     int height = 0;
     height = tree.get_h(tree.getRoot());
