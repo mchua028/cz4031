@@ -30,7 +30,7 @@ Node::Node(int i)
 BPTree::BPTree(int BLOCK_SIZE)
 {
     root = NULL;
-    NODE_KEYS=(BLOCK_SIZE)/32;
+    NODE_KEYS=(BLOCK_SIZE-16)/20;
 }
 
 BPTree::~BPTree()
