@@ -36,11 +36,13 @@ void importData(Storage &storage, BPTree &bptree, const char* filename) {
     dataFile.close();
 } 
 
-void experiment1(Storage &storage) {
+void experiment1(Storage &storage, BPTree &bptree) {
     std::cout << "---Experiment 1---\n";
 
     std::cout << "Number of blocks: " << storage.getUsedBlocks() << '\n';
-    std::cout << "Size of database: " << storage.getUsedSize() / 1000000.0 << " MB\n";
+    int noOfNodes=0;
+    bptree.getNoOfNodes(bptree.getRoot(),&noOfNodes);
+    std::cout << "Size of database: " << (storage.getUsedSize() + noOfNodes*BLOCK_SIZE) / 1000000.0 << " MB\n";
 }
 
 void experiment2(BPTree &bptree){
@@ -156,7 +158,7 @@ int main() {
     
     importData(storage, bptree, "./data2.tsv");
 
-    experiment1(storage);
+    experiment1(storage, bptree);
 
     experiment2(bptree);
 
