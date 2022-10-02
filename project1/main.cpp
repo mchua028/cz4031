@@ -29,10 +29,7 @@ void importData(Storage &storage, BPTree &bptree, const char* filename) {
         std::byte *recordPtr = storage.insertRecord(r);
         //insert each record into bptree
         bptree.insert(r.numVotes,recordPtr);
-        std::cout<<"first BPTREE"<<endl;
-        bptree.display(bptree.getRoot(),0);
     }
-
 
     dataFile.close();
 } 
@@ -138,9 +135,8 @@ void experiment5(Storage &storage, BPTree &bptree, int key) {
     {
         Record r;
         r=get<0>(storage.getRecord(recordPtrs[j]));
-        std::cout << "Record with numvotes = "<<key<<": " << get<0>(storage.getRecord(recordPtrs[j])).tconst << endl;                
+        std::cout << "Record with numvotes = "<<key<<": " << r.tconst << endl;                
         storage.deleteRecord(recordPtrs[j]);
-            
     }
     bptree.remove(key);
     int size = 0;
@@ -150,33 +146,18 @@ void experiment5(Storage &storage, BPTree &bptree, int key) {
     bptree.getRootContents();
     std::cout << "Root Child Contents" << endl;
     bptree.getRootChildContents();
-    std::cout <<"BPTREE after removing "<<key<<":"<<endl;
-    bptree.display(bptree.getRoot(),0);
 }
+
 int main() {
     Storage storage(SIZE, BLOCK_SIZE, RECORD_SIZE);
     BPTree bptree(BLOCK_SIZE);
     
-    importData(storage, bptree, "./data2.tsv");
+    importData(storage, bptree, "./data.tsv");
 
-    // experiment1(storage, bptree);
-
-    // experiment2(bptree);
-
-    // experiment3(storage, bptree, 154);
-
-    // experiment4(storage, bptree, 30000,40000);
-
-    experiment5(storage, bptree, 6018);
-
-    experiment5(storage, bptree, 2127);
-
-    experiment5(storage, bptree, 1807);
-
-    experiment5(storage, bptree, 1645);
-
-    experiment5(storage, bptree, 1342);
-
+    experiment1(storage, bptree);
+    experiment2(bptree);
+    experiment3(storage, bptree, 154);
+    experiment4(storage, bptree, 30000,40000);
     experiment5(storage, bptree, 1000);
 
     return 0;

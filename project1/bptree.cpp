@@ -9,16 +9,9 @@
 #include "bptree.h"
 using namespace std;
 
-// Node::Node()
-// {
-//     keys = new int[NODE_KEYS];
-//     ptrs = new ptrs_struct[NODE_KEYS + 1];
-// }
 
 Node::~Node()
 {
-    delete[] keys;
-    delete[] ptrs;
 }
 
 Node::Node(int i)
@@ -627,208 +620,182 @@ void BPTree::display(Node *cursor, int level)
         }
     }
 }
-void BPTree::remove(int x)
+void BPTree::remove(int key)
 {
-    std::cout <<"Removing "<<x<<"..."<<endl;
     int mergeCount = 0;
-    if (root == NULL)
-    {
-        // cout << "Tree empty\n";
+    if (this->root == NULL) {
+        return;
     }
-    else
+    
+    Node *cursor = root;
+    Node *parent;
+    int leftSibling, rightSibling;
+    //find leaf node which may contain key
+    while (!cursor->isLeaf)
     {
-        Node *cursor = root;
-        Node *parent;
-        int leftSibling, rightSibling;
-        //find leaf node which may contain key
-        while (cursor->isLeaf == false)
+        parent = cursor;
+        for (int i = 0; i < cursor->size; i++)
         {
-            for (int i = 0; i < cursor->size; i++)
+            leftSibling = i - 1;
+            rightSibling = i + 1;
+            if (key < (cursor->keys)[i])
             {
-                parent = cursor;
-                leftSibling = i - 1;
-                rightSibling = i + 1;
-                if (x < (cursor->keys)[i])
-                {
-                    cursor = (Node *)cursor->ptrs[i].nodePtr;
-                    break;
-                }
-                if (i == cursor->size - 1)
-                {
-                    leftSibling = i;
-                    rightSibling = i + 2;
-                    cursor = (Node *)cursor->ptrs[i + 1].nodePtr;
-                    break;
-                }
-            }
-        }
-        std::cout <<"Reached leaf node that may contain key\n";
-        bool found = false;
-        int pos;
-        for (pos = 0; pos < cursor->size; pos++)
-        {
-            if (cursor->keys[pos] == x)
-            {
-                found = true;
-                std::cout <<"Found"<<endl;
+                cursor = (Node *)cursor->ptrs[i].nodePtr;
                 break;
             }
-        }
-        if (!found)
-        {
-            std::cout << "Not found\n";
-            return;
-        }
-        //remove key & ptr to records
-        for (int i = pos; i < cursor->size; i++)
-        {
-            cursor->keys[i] = cursor->keys[i + 1];
-        }
-        for (int i = pos; i < (cursor->size-1); i++)
-        {
-            cursor->ptrs[i] = cursor->ptrs[i + 1];
-        }
-        cursor->size--;
-        //if only 1 level
-        if (cursor == root)
-        {
-            for (int i = 0; i < NODE_KEYS + 1; i++)
+            if (i == cursor->size - 1)
             {
-                cursor->ptrs[i].nodePtr = NULL;
+                leftSibling = i;
+                rightSibling = i + 2;
+                cursor = (Node *)cursor->ptrs[i + 1].nodePtr;
             }
-            //no more tree
-            if (cursor->size == 0)
-            {
-                // cout << "Tree died\n";
-                delete[] cursor->keys;
-                delete[] cursor->ptrs;
-                delete cursor;
-                root = NULL;
-            }
-            std::cout <<"returning...\n";
-            return;
         }
-        //change parent key if i=0
-        if (leftSibling>=0 && pos==0){
-            parent->keys[leftSibling]=cursor->keys[0];
-        }
-        //if current leaf node is of min size
-        if (cursor->size >= (NODE_KEYS + 1) / 2)
+    }
+    bool found = false;
+    int pos;
+    for (pos = 0; pos < cursor->size; pos++)
+    {
+        if (cursor->keys[pos] == key)
         {
-            std::cout <<"returning...\n";
-            return;
+            found = true;
+            break;
         }
-        std::cout <<"trying to borrow or merge\n";
-        //if current leaf node is not of min size
-        //try borrowing from sibling nodes
-        //if left sibling exists
-        if (leftSibling >= 0)
+    }
+    if (!found)
+    {
+        return;
+    }
+    //remove key & ptr to records
+    for (int i = pos; i < cursor->size - 1; i++)
+    {
+        cursor->keys[i] = cursor->keys[i + 1];
+        cursor->ptrs[i] = cursor->ptrs[i + 1];
+    }
+    cursor->size--;
+    //if only 1 level
+    if (cursor == root)
+    {
+        for (int i = 0; i < NODE_KEYS + 1; i++)
         {
-            Node *leftNode = (Node *)parent->ptrs[leftSibling].nodePtr;
-            //borrow from left sibling if size will be big enough
-            if (leftNode->size >= (NODE_KEYS + 1) / 2 + 1)
-            {
-                //make space for 1 key & ptr from left sibling
-                for (int i = cursor->size; i > 0; i--)
-                {
-                    cursor->keys[i] = cursor->keys[i - 1];
-                    cursor->ptrs[i] = cursor->ptrs[i - 1];
-                }
-                cursor->size++;
-                cursor->keys[0] = leftNode->keys[leftNode->size - 1];
-                cursor->ptrs[0] = leftNode->ptrs[leftNode->size - 1];
-                leftNode->size--;
-                // leftNode->ptrs[leftNode->size].nodePtr = cursor;
-                // leftNode->ptrs[leftNode->size + 1].nodePtr = NULL;
-                parent->keys[leftSibling] = cursor->keys[0];
-                return;
-            }
+            cursor->ptrs[i].nodePtr = NULL;
         }
-        //if right sibling exists
-        if (rightSibling <= parent->size)
+        //no more tree
+        if (cursor->size == 0)
         {
-            Node *rightNode = (Node *)parent->ptrs[rightSibling].nodePtr;
-            //borrow from right sibling if size will be big enough
-            if (rightNode->size >= (NODE_KEYS + 1) / 2 + 1)
-            {
-                cursor->size++;
-                // cursor->ptrs[cursor->size] = cursor->ptrs[cursor->size - 1];
-                // cursor->ptrs[cursor->size - 1].nodePtr = NULL;
-                cursor->keys[cursor->size - 1] = rightNode->keys[0];
-                cursor->ptrs[cursor->size - 1] = rightNode->ptrs[0];
-                rightNode->size--;
-                // rightNode->ptrs[rightNode->size] = rightNode->ptrs[rightNode->size + 1];
-                // rightNode->ptrs[rightNode->size + 1].nodePtr = NULL;
-                for (int i = 0; i < rightNode->size; i++)
-                {
-                    rightNode->keys[i] = rightNode->keys[i + 1];
-                    rightNode->ptrs[i] = rightNode->ptrs[i + 1];
-                }
-                parent->keys[rightSibling - 1] = rightNode->keys[0];
-                return;
-            }
-        }
-        //if cannot borrow from siblings
-        //merge with sibling
-        //if left sibling exists
-        std::cout <<"merging...";
-        if (leftSibling >= 0)
-        {
-            std::cout<<"merging with left sibling...\n";
-            Node *leftNode = (Node *)parent->ptrs[leftSibling].nodePtr;
-            //copy keys & ptrs from cursor to leftnode
-            for (int i = leftNode->size, j = 0; j < cursor->size; i++, j++)
-            {
-                leftNode->keys[i] = cursor->keys[j];
-                leftNode->ptrs[i] = cursor->ptrs[j];
-            }
-            // leftNode->ptrs[leftNode->size].nodePtr = NULL;
-            leftNode->size += cursor->size;
-            if ((leftSibling+2)<=parent->size){
-                leftNode->ptrs[NODE_KEYS].nodePtr = parent->ptrs[leftSibling+2].nodePtr;
-            }
-            else{
-                leftNode->ptrs[NODE_KEYS].nodePtr=NULL;
-            }
-            removeInternal(parent->keys[leftSibling], parent, cursor);
+            // cout << "Tree died\n";
             delete[] cursor->keys;
             delete[] cursor->ptrs;
             delete cursor;
+            root = NULL;
         }
-        //if right sibling exists
-        else if (rightSibling <= parent->size)
+        return;
+    }
+    //change parent key if i=0
+    if (leftSibling>=0 && pos==0){
+        parent->keys[leftSibling]=cursor->keys[0];
+    }
+    //if current leaf node is of min size
+    if (cursor->size >= (NODE_KEYS + 1) / 2)
+    {
+        return;
+    }
+    //if current leaf node is not of min size
+    //try borrowing from sibling nodes
+    //if left sibling exists
+    if (leftSibling >= 0)
+    {
+        Node *leftNode = (Node *)parent->ptrs[leftSibling].nodePtr;
+        //borrow from left sibling if size will be big enough
+        if (leftNode->size >= (NODE_KEYS + 1) / 2 + 1)
         {
-            Node *rightNode = (Node *)parent->ptrs[rightSibling].nodePtr;
-            for (int i = cursor->size, j = 0; j < rightNode->size; i++, j++)
+            for (int i = cursor->size; i > 0; i--)
             {
-                cursor->keys[i] = rightNode->keys[j];
-                cursor->ptrs[i] = rightNode->ptrs[j];
+                cursor->keys[i] = cursor->keys[i - 1];
+                cursor->ptrs[i] = cursor->ptrs[i - 1];
             }
-            // cursor->ptrs[cursor->size].nodePtr = NULL;
-            cursor->size += rightNode->size;
-            if ((rightSibling+1)<=parent->size){
-                cursor->ptrs[NODE_KEYS].nodePtr = parent->ptrs[rightSibling+1].nodePtr;
-            }
-            else{
-                cursor->ptrs[NODE_KEYS].nodePtr=NULL;
-            }
-            // cursor->ptrs[cursor->size] = rightNode->ptrs[rightNode->size];
-            // cout << "Merging two leaf nodes\n";
-            mergeCount += 1;
-            removeInternal(parent->keys[rightSibling - 1], parent, rightNode);
-            delete[] rightNode->keys;
-            delete[] rightNode->ptrs;
-            delete rightNode;
+            cursor->size++;
+            cursor->keys[0] = leftNode->keys[leftNode->size - 1];
+            cursor->ptrs[0] = leftNode->ptrs[leftNode->size - 1];
+            leftNode->size--;
+            parent->keys[leftSibling] = cursor->keys[0];
+            return;
         }
     }
+    //if right sibling exists
+    if (rightSibling <= parent->size)
+    {
+        Node *rightNode = (Node *)parent->ptrs[rightSibling].nodePtr;
+        //borrow from right sibling if size will be big enough
+        if (rightNode->size >= (NODE_KEYS + 1) / 2 + 1)
+        {
+            cursor->size++;
+            cursor->keys[cursor->size - 1] = rightNode->keys[0];
+            cursor->ptrs[cursor->size - 1] = rightNode->ptrs[0];
+            rightNode->size--;
+            for (int i = 0; i < rightNode->size; i++)
+            {
+                rightNode->keys[i] = rightNode->keys[i + 1];
+                rightNode->ptrs[i] = rightNode->ptrs[i + 1];
+            }
+            parent->keys[rightSibling - 1] = rightNode->keys[0];
+            return;
+        }
+    }
+    //if cannot borrow from siblings
+    //merge with sibling
+    //if left sibling exists
+    if (leftSibling >= 0)
+    {
+        Node *leftNode = (Node *)parent->ptrs[leftSibling].nodePtr;
+        //copy keys & ptrs from cursor to leftnode
+        for (int i = leftNode->size, j = 0; j < cursor->size; i++, j++)
+        {
+            leftNode->keys[i] = cursor->keys[j];
+            leftNode->ptrs[i] = cursor->ptrs[j];
+        }
+        // leftNode->ptrs[leftNode->size].nodePtr = NULL;
+        leftNode->size += cursor->size;
+        if ((leftSibling+2)<=parent->size){
+            leftNode->ptrs[NODE_KEYS].nodePtr = parent->ptrs[leftSibling+2].nodePtr;
+        }
+        else{
+            leftNode->ptrs[NODE_KEYS].nodePtr=NULL;
+        }
+        removeInternal(parent->keys[leftSibling], parent, cursor);
+        mergeCount++;
+        delete[] cursor->keys;
+        delete[] cursor->ptrs;
+        delete cursor;
+    }
+    //if right sibling exists
+    else if (rightSibling <= parent->size)
+    {
+        Node *rightNode = (Node *)parent->ptrs[rightSibling].nodePtr;
+        for (int i = cursor->size, j = 0; j < rightNode->size; i++, j++)
+        {
+            cursor->keys[i] = rightNode->keys[j];
+            cursor->ptrs[i] = rightNode->ptrs[j];
+        }
+        cursor->size += rightNode->size;
+        if ((rightSibling+1)<=parent->size){
+            cursor->ptrs[NODE_KEYS].nodePtr = parent->ptrs[rightSibling+1].nodePtr;
+        }
+        else{
+            cursor->ptrs[NODE_KEYS].nodePtr=NULL;
+        }
+        mergeCount += 1;
+        removeInternal(parent->keys[rightSibling - 1], parent, rightNode);
+        delete[] rightNode->keys;
+        delete[] rightNode->ptrs;
+        delete rightNode;
+    }
+
     std::cout << "Merge Count: " << mergeCount << endl;
 }
 void BPTree::removeInternal(int x, Node *cursor, Node *child)
 {
-    std::cout<<"removing internal...";
     if (cursor == root)
     {
-        std::cout<<"parent is root...\n";
         if (cursor->size == 1)
         {
             if (cursor->ptrs[1].nodePtr == child)
@@ -840,7 +807,6 @@ void BPTree::removeInternal(int x, Node *cursor, Node *child)
                 delete[] cursor->keys;
                 delete[] cursor->ptrs;
                 delete cursor;
-                // cout << "Changed root node\n";
                 return;
             }
             else if (cursor->ptrs[0].nodePtr == child)
@@ -852,10 +818,27 @@ void BPTree::removeInternal(int x, Node *cursor, Node *child)
                 delete[] cursor->keys;
                 delete[] cursor->ptrs;
                 delete cursor;
-                // cout << "Changed root node\n";
                 return;
             }
         }
+    }
+
+    //if cursor has enough number of keys
+    if (cursor->size>(NODE_KEYS/2)){
+        //find position of x
+        int i = 0;
+        while (x > cursor->keys[i] && i < cursor->size)
+            i++;
+
+        for (int j = i; j < (cursor->size-1); j++)
+        {
+            cursor->keys[j] = cursor->keys[j + 1];
+        }
+        for (int j = i; j < (cursor->size-1); j++)
+        {
+            cursor->ptrs[j] = cursor->ptrs[j + 1];
+        }
+        cursor->size--;
     }
 }
 // Get the root
@@ -886,24 +869,11 @@ void BPTree::getNoOfNodes(Node *cursor, int *size)
 }
 
 // get height
-int BPTree::getHeight(Node *cursor)
-{
-    int h = 0;
-    if (cursor == NULL)
-    {
-        return 0;
+int BPTree::getHeight(Node *cursor) {
+    if (cursor == NULL) {
+        return -1;
     }
-    if (cursor->isLeaf == true)
-    {
-        h = 0;
-        return h;
-    }
-    if (cursor->isLeaf != true)
-    {
-        h = this->getHeight((Node *)cursor->ptrs[0].nodePtr);
-        return h + 1;
-    }
-    return h;
+    return this->getHeight((Node *)cursor->ptrs[0].nodePtr) + 1;
 }
 
 //get root contents
