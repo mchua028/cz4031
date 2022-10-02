@@ -35,29 +35,29 @@ void importData(Storage &storage, BPTree &bptree, const char* filename) {
 } 
 
 void experiment1(Storage &storage, BPTree &bptree) {
-    std::cout << "---Experiment 1---\n";
+    std::cout << "\n---Experiment 1---\n";
 
-    std::cout << "Number of blocks: " << storage.getUsedBlocks() << '\n';
+    std::cout << "Number of data blocks: " << storage.getUsedBlocks() << '\n';
     int noOfNodes=0;
     bptree.getNoOfNodes(bptree.getRoot(),&noOfNodes);
     std::cout << "Size of database: " << (storage.getUsedSize() + noOfNodes*BLOCK_SIZE) / 1000000.0 << " MB\n";
 }
 
 void experiment2(BPTree &bptree){
-    std::cout << "---Experiment 2---\n";
-    std::cout <<"parameter n: "<< bptree.getNodeKeys()<<endl;
-    int noOfNodes=0;
-    bptree.getNoOfNodes(bptree.getRoot(),&noOfNodes);
-    std::cout <<"Number of nodes of bplus tree:"<<noOfNodes<<endl;
-    std::cout <<"Height of bplus tree: "<<bptree.getHeight(bptree.getRoot())<<endl;
+    std::cout << "\n---Experiment 2---\n";
+    std::cout <<"Parameter n: "<< bptree.getNodeKeys() << '\n';
+    int noOfNodes = 0;
+    bptree.getNoOfNodes(bptree.getRoot(), &noOfNodes);
+    std::cout <<"Number of nodes of bplus tree:"<<noOfNodes<<'\n';
+    std::cout <<"Height of bplus tree: "<<bptree.getHeight(bptree.getRoot())<<'\n';
     std::cout <<"Root contents:\n";
     bptree.getRootContents();
-    std::cout <<"First child node contents:\n";
+    std::cout <<"First child of root contents:\n";
     bptree.getRootChildContents();
 }
 
 void experiment3(Storage &storage, BPTree &bptree, int key){
-    std::cout << "---Experiment 3---\n";
+    std::cout << "\n---Experiment 3---\n";
 
     vector<byte *> recordPtrs = bptree.searchRecords(key);
 
@@ -70,22 +70,23 @@ void experiment3(Storage &storage, BPTree &bptree, int key){
         totalAverageRating += r.averageRating;
     }
     
-    std::cout << "Number of blocks accessed:" << blockIndices.size() << endl;
+    std::cout << "Number of data blocks accessed:" << blockIndices.size() << '\n';
 
     // Print the content of the first 5 accessed blocks
     for (int i = 0; i < min((int) blockIndices.size(), 5); i++) {
         auto blockContent = storage.getBlockContent(blockIndices[i]);
+        std::cout << "Contents of data block " << blockIndices[i] << ":\n";
         for (auto tconst: blockContent) {
             std::cout << tconst << ", ";
         }
         std::cout << '\n';
     }
 
-    std::cout <<"Average rating: "<< totalAverageRating / recordPtrs.size() <<endl;
+    std::cout << "Average rating: "<< totalAverageRating / recordPtrs.size() <<'\n';
 }
 
 void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey){
-    std::cout << "---Experiment 4---\n";
+    std::cout << "\n---Experiment 4---\n";
     vector<byte *> recordPtrs=bptree.searchRange(startKey,endKey);
 
     vector<int> blockIndexes;
@@ -112,11 +113,11 @@ void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey){
         }
 
     }
-    std::cout <<"Number of blocks accessed:"<<blockIndexes.size()<<endl;
+    std::cout <<"Number of data blocks accessed:"<<blockIndexes.size()<<'\n';
 
     //print contents of block
     for (int i=0;i<blockIndexes.size() && i<5;i++){
-        std::cout <<"Contents of block "<<blockIndexes[i]<<":\n";
+        std::cout <<"Contents of data block "<<blockIndexes[i]<<":\n";
         vector<string> contents=storage.getBlockContent(blockIndexes[i]);
         for (int j=0;j<contents.size();j++){
             std::cout << contents[j]<<", ";
@@ -125,26 +126,26 @@ void experiment4(Storage &storage, BPTree &bptree, int startKey, int endKey){
     }
     //calculate average rating
     avgRating/=recordPtrs.size();
-    std::cout <<"Average rating: "<<avgRating<<endl;
+    std::cout <<"Average rating: "<<avgRating<<'\n';
 
 }
 void experiment5(Storage &storage, BPTree &bptree, int key) {
-    std::cout << "---Experiment 5---" << endl;
+    std::cout << "\n---Experiment 5---\n";
     vector<byte *> recordPtrs=bptree.searchRecords(key);
     for (int j = 0; j < recordPtrs.size(); j++)
     {
         Record r;
         r=get<0>(storage.getRecord(recordPtrs[j]));
-        std::cout << "Record with numvotes = "<<key<<": " << r.tconst << endl;                
         storage.deleteRecord(recordPtrs[j]);
     }
     bptree.remove(key);
     int size = 0;
     bptree.getNoOfNodes(bptree.getRoot(), &size);
-    std::cout << "No. of nodes: " << size << endl;
-    std::cout << "Root Contents" << endl;
+    std::cout << "No. of nodes: " << size << '\n';
+    std::cout << "Height of bplus tree: " << bptree.getHeight(bptree.getRoot()) << '\n';
+    std::cout << "Root Contents\n";
     bptree.getRootContents();
-    std::cout << "Root Child Contents" << endl;
+    std::cout << "First child of root contents\n";
     bptree.getRootChildContents();
 }
 
