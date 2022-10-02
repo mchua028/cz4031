@@ -30,6 +30,7 @@ class BPTree
 private:
     Node *root;
     int NODE_KEYS;
+    Node *search(int key);
     void insertInternal(int, Node *, Node *);
     int findSmallestKeyInSubtree(Node *);
     Node *findParent(Node *, Node *);
@@ -39,7 +40,6 @@ public:
     BPTree(int);
     ~BPTree();
     void insert(int key, byte *recordPtr);
-    Node *search(int key);
     vector<byte *> searchRecords(int key);
     vector<byte *> searchRange(int startKey, int endKey);
     void remove(int x);
