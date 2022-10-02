@@ -157,7 +157,7 @@ int main() {
 
     experiment1(storage, bptree);
     experiment2(bptree);
-    experiment3(storage, bptree, 154);
+    experiment3(storage, bptree, 500);
     experiment4(storage, bptree, 30000,40000);
     experiment5(storage, bptree, 1000);
 
