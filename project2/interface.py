@@ -1,10 +1,11 @@
-import json
 import tkinter as tk
 import typing
 from abc import ABC, abstractmethod
 from tkinter import ttk
 
 import psycopg
+
+from preprocessing import QueryPlanTree
 
 
 class App(tk.Tk):
@@ -66,17 +67,7 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
     
     def update_changes(self, *args, **kwargs):
         input_query = self.ctx.vars["input_query"].get()
-        self.visualize_query_plan["text"] = self.explain_query(input_query) 
-    
-    def explain_query(self, query: str) -> str:
-        # TODO: Handle exceptions
-        self.ctx.cursor.execute(
-            f"EXPLAIN (FORMAT JSON, ANALYZE) {query}"
-        )
-        return json.dumps(
-            self.ctx.cursor.fetchone()[0][0],
-            indent=2
-        )
+        self.visualize_query_plan["text"] = str(QueryPlanTree(self.ctx.cursor, input_query))
 
 
 class InputQueryFrame(ttk.Frame, Updatable):
