@@ -60,8 +60,8 @@ class QueryPlanTree:
 		# List of node types -> https://github.com/postgres/postgres/blob/master/src/backend/commands/explain.c#L1191
 		data = {}
 		for k, v in plan.items():
-			if k == "Relation Name" or k == "Alias" \
-				or "Filter" in k or "Cond" in k:
+			if k == "Relation Name" or k == "Alias" or k == "Group Key" or k == "Strategy" \
+				or ("Filter" in k and "by Filter" not in k) or "Cond" in k:
 				data[k] = v
 		
 		return data
