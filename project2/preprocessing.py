@@ -69,9 +69,12 @@ class QueryPlanTree:
 		return f"{'    ' * level}-> {node_type} {node.get_primary_info()}{left}{right}"
 
 def explain_query(cursor: psycopg.Cursor, query: str, debug: bool = False) -> dict:
-	cursor.execute(
-		f"EXPLAIN (FORMAT JSON, ANALYZE) {query}"
+	try:
+		cursor.execute(
+			f"EXPLAIN (FORMAT JSON, ANALYZE) {query}"
 	)
+	except:
+		cursor.execute('ROLLBACK')
 	query_explanation = cursor.fetchone()[0][0]
 	if debug:
 		print("Query Explanation:", json.dumps(query_explanation, indent=2))
