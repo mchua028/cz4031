@@ -1,4 +1,5 @@
 from typing import List, Optional, Self
+import json
 import psycopg
 
 # Assume always binary tree
@@ -68,8 +69,12 @@ class QueryPlanTree:
 		return data
 
 
-def explain_query(cursor: psycopg.Cursor, query: str) -> dict:
+def explain_query(cursor: psycopg.Cursor, query: str, debug: bool = False) -> dict:
 	cursor.execute(
 		f"EXPLAIN (FORMAT JSON, ANALYZE) {query}"
 	)
-	return cursor.fetchone()[0][0]
+	query_explanation = cursor.fetchone()[0][0]
+	if debug:
+		print("Query Explanation:", json.dumps(query_explanation, indent=2))
+
+	return query_explanation
