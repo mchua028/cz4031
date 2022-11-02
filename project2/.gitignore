@@ -1,3 +1,4 @@
 tpch_db.*
 *.pdf
 venv/
+__pycache__/
