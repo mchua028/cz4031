@@ -8,6 +8,17 @@ class QueryPlanTreeNode:
 		self.info = info
 		self.left = left
 		self.right = right
+	
+	def get_primary_info(self) -> dict:
+		# List of node types -> https://github.com/postgres/postgres/blob/master/src/backend/commands/explain.c#L1191
+		primary_info = {}
+		for k, v in self.info.items():
+			if k == "Node Type" or k == "Relation Name" \
+				or k == "Alias" or k == "Group Key" or k == "Strategy" \
+				or ("Filter" in k and "Removed by" not in k) or "Cond" in k:
+				primary_info[k] = v
+		
+		return primary_info
 				
 class QueryPlanTree:
 	root: Optional[QueryPlanTreeNode]
@@ -16,7 +27,7 @@ class QueryPlanTree:
 		self.root = None
 	
 	def __init__(self, cursor: psycopg.Cursor, query: str):
-		plan = explain_query(cursor, query)["Plan"]
+		plan: dict = explain_query(cursor, query)["Plan"]
 		self.root = self._build(plan)
 
 	@staticmethod
@@ -24,8 +35,8 @@ class QueryPlanTree:
 		if "Node Type" not in plan:
 			return None
 		
-		node_info = QueryPlanTree._extract_node_info(plan)
-		cur = QueryPlanTreeNode(node_info)
+		info = {k: v for k, v in plan.items() if k != "Plans"}
+		cur = QueryPlanTreeNode(info)
 
 		subplans: Optional[List[dict]] = plan.get("Plans")
 		if subplans is not None:
@@ -47,6 +58,7 @@ class QueryPlanTree:
 		left = QueryPlanTree._str_helper(node.left, level + 1)
 		if left != "":
 			left = "\n" + left
+
 		right = QueryPlanTree._str_helper(node.right, level + 1)
 		if right != "":
 			right = "\n" + right 
@@ -54,20 +66,7 @@ class QueryPlanTree:
 		node_type: str = node.info["Node Type"]
 		del node.info["Node Type"]
 
-		return f"{'    ' * level}-> {node_type} {str(node.info) if len(node.info) > 0 else ''}{left}{right}"
-
-	@staticmethod
-	def _extract_node_info(plan: dict) -> dict:
-		# List of node types -> https://github.com/postgres/postgres/blob/master/src/backend/commands/explain.c#L1191
-		data = {}
-		for k, v in plan.items():
-			if k == "Node Type" or k == "Relation Name" \
-				or k == "Alias" or k == "Group Key" or k == "Strategy" \
-				or ("Filter" in k and "Removed by" not in k) or "Cond" in k:
-				data[k] = v
-		
-		return data
-
+		return f"{'    ' * level}-> {node_type} {node.get_primary_info()}{left}{right}"
 
 def explain_query(cursor: psycopg.Cursor, query: str, debug: bool = False) -> dict:
 	cursor.execute(
