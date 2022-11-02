@@ -3,8 +3,8 @@ import psycopg
 
 # Assume always binary tree
 class QueryPlanTreeNode:
-	def __init__(self, val: str, left: Optional[Self] = None, right: Optional[Self] = None):
-		self.val = val
+	def __init__(self, info: dict, left: Optional[Self] = None, right: Optional[Self] = None):
+		self.info = info
 		self.left = left
 		self.right = right
 				
@@ -23,12 +23,9 @@ class QueryPlanTree:
 		if "Node Type" not in plan:
 			return None
 		
-		label = plan["Node Type"]
-
 		node_info = QueryPlanTree._extract_node_info(plan)
-		label += f" {str(node_info)}" if len(node_info) > 0 else ""
+		cur = QueryPlanTreeNode(node_info)
 
-		cur = QueryPlanTreeNode(label)
 		subplans: Optional[List[dict]] = plan.get("Plans")
 		if subplans is not None:
 			if len(subplans) >= 1:
@@ -53,22 +50,25 @@ class QueryPlanTree:
 		if right != "":
 			right = "\n" + right 
 
-		return "    " * level + "-> " + node.val + left + right
+		node_type: str = node.info["Node Type"]
+		del node.info["Node Type"]
+
+		return f"{'    ' * level}-> {node_type} {str(node.info) if len(node.info) > 0 else ''}{left}{right}"
 
 	@staticmethod
 	def _extract_node_info(plan: dict) -> dict:
 		# List of node types -> https://github.com/postgres/postgres/blob/master/src/backend/commands/explain.c#L1191
 		data = {}
 		for k, v in plan.items():
-			if k == "Relation Name" or k == "Alias" or k == "Group Key" or k == "Strategy" \
-				or ("Filter" in k and "by Filter" not in k) or "Cond" in k:
+			if k == "Node Type" or k == "Relation Name" \
+				or k == "Alias" or k == "Group Key" or k == "Strategy" \
+				or ("Filter" in k and "Removed by" not in k) or "Cond" in k:
 				data[k] = v
 		
 		return data
 
 
 def explain_query(cursor: psycopg.Cursor, query: str) -> dict:
-	# TODO: Handle exceptions
 	cursor.execute(
 		f"EXPLAIN (FORMAT JSON, ANALYZE) {query}"
 	)
