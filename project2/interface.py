@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from tkinter import ttk
 
 import psycopg
+import sqlparse
 
 from preprocessing import QueryPlanTree
 
@@ -20,11 +21,11 @@ class App(tk.Tk):
         self.topLabel = tk.Label(self, text="Enter SQL query below").grid(column=0, row=0)
 
         self.annotated_query_frame = AnnotatedQueryFrame(self, self.ctx)
-        self.annotated_query_frame.grid(column=0, row=2)
+        self.annotated_query_frame.grid(column=0, row=2, rowspan=2)
         self.ctx.frames["annotated_query"] = self.annotated_query_frame
 
         self.visualize_query_plan_frame = VisualizeQueryPlanFrame(self, self.ctx)
-        self.visualize_query_plan_frame.grid(column=1, row=1, rowspan=2)
+        self.visualize_query_plan_frame.grid(column=1, row=0, rowspan=2)
         self.ctx.frames["visualize_query_plan"] = self.visualize_query_plan_frame
 
         self.input_query_frame = InputQueryFrame(self, self.ctx)
@@ -56,8 +57,12 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         self.annotated_query = ttk.Label(self, text="Annotation")
         self.annotated_query.grid(column=0,row=0)
 
+        self.query = ttk.Label(self, text="")
+        self.query.grid(column=0,row=2)
+
     def update_changes(self, *args, **kwargs):
-        pass
+        formatted = sqlparse.format(self.ctx.vars["input_query"].get(), reindent=True, keyword_case='upper')
+        self.query["text"] = formatted
 
 
 class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
@@ -66,7 +71,7 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
         self.ctx = ctx
 
         self.visualize_query_plan = ttk.Label(self, text="Visualization")
-        self.visualize_query_plan.grid()
+        self.visualize_query_plan.grid(column=0, row=0)
     
     def update_changes(self, *args, **kwargs):
         input_query = self.ctx.vars["input_query"].get()
@@ -91,6 +96,12 @@ class InputQueryFrame(ttk.Frame, Updatable):
         )
         self.ctx.frames["annotated_query"].update_changes()
         self.ctx.frames["visualize_query_plan"].update_changes()
+
+        #####
+        #print(self.ctx.vars["input_query"])
+        #sql = 'select * from foo where id in (select id from bar);'
+        #print(sqlparse.format(self.ctx.vars["input_query"].get(), reindent=True, keyword_case='upper'))
+        
 
     def update_changes(self, *args, **kwargs):
         pass
