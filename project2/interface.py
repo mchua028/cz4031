@@ -70,7 +70,13 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
     
     def update_changes(self, *args, **kwargs):
         input_query = self.ctx.vars["input_query"].get()
-        self.visualize_query_plan["text"] = str(QueryPlanTree(self.ctx.cursor, input_query))
+
+        try:
+            self.visualize_query_plan["text"] = str(QueryPlanTree(self.ctx.cursor, input_query))
+            self.ctx.cursor.connection.commit()
+        except psycopg.errors.Error as err:
+            self.visualize_query_plan["text"] = err.diag.message_primary
+            self.ctx.cursor.connection.rollback()
 
 
 class InputQueryFrame(ttk.Frame, Updatable):
