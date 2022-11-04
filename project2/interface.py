@@ -9,6 +9,7 @@ from sqlparse.sql import IdentifierList, Identifier
 from sqlparse.tokens import Keyword, DML
 
 from preprocessing import QueryPlanTree
+import preprocessing
 
 
 class App(tk.Tk):
@@ -104,10 +105,7 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         #query = "SELECT * FROM (SELECT * FROM CUSTOMER WHERE ID > 10) WHERE ID <50 ;"
         parsed = sqlparse.parse(query)
         stmt = parsed[0]
-        for i in stmt.tokens:
-            print(i.ttype)
-            print(i.value + "\n")
-        #print(stmt.tokens)
+        print(stmt.tokens)
          
         #return sqlparse.parse(query)
 

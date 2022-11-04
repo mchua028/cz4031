@@ -55,8 +55,8 @@ class QueryPlanTree:
         #traverse right subtree
 		QueryPlanTree.postOrder(root.right)
         #traverse root
-		print(root.info)
-		print(root.desc)
+		#print(root.info)
+		#print(root.desc)
 	
 	def __init__(self, cursor: psycopg.Cursor, query: str):
 		plan: dict = explain_query(cursor, query)["Plan"]
@@ -81,7 +81,7 @@ class QueryPlanTree:
 		return cur
 	
 	def __str__(self) -> str:
-		return QueryPlanTree._str_helper(self.root, 0) 
+		return QueryPlanTree.gen_annotation(self.root) 
 
 	@staticmethod
 	def _str_helper(node: Optional[QueryPlanTreeNode], level: int) -> str:
@@ -100,6 +100,25 @@ class QueryPlanTree:
 		#del node.info["Node Type"]
 
 		return f"{'    ' * level}-> {node_type} {node.get_primary_info()}{left}{right}"
+
+	@staticmethod
+	def gen_annotation(node: Optional[QueryPlanTreeNode]) -> str:
+		if node is None:
+			return ""
+		
+		left = QueryPlanTree.gen_annotation(node.left)
+		if left != "":
+			left = left + "\n"
+
+		right = QueryPlanTree.gen_annotation(node.right)
+		if right != "":
+			right = right + "\n"
+
+		node_type: str = node.info["Node Type"]
+		total_cost: str = node.info["Total Cost"]
+		#del node.info["Node Type"]
+
+		return f"{left}{right} Perform {node_type} on relation: unknown with cost: {total_cost}"
 
 	
 		
