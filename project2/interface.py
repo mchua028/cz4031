@@ -23,11 +23,11 @@ class App(tk.Tk):
         self.topLabel = tk.Label(self, text="Enter SQL query below").grid(column=0, row=0)
 
         self.annotated_query_frame = AnnotatedQueryFrame(self, self.ctx)
-        self.annotated_query_frame.grid(column=0, row=2, rowspan=2)
+        self.annotated_query_frame.grid(column=0, row=2)
         self.ctx.frames["annotated_query"] = self.annotated_query_frame
 
         self.visualize_query_plan_frame = VisualizeQueryPlanFrame(self, self.ctx)
-        self.visualize_query_plan_frame.grid(column=1, row=0, rowspan=2)
+        self.visualize_query_plan_frame.grid(column=1, row=2, rowspan=2)
         self.ctx.frames["visualize_query_plan"] = self.visualize_query_plan_frame
 
         self.input_query_frame = InputQueryFrame(self, self.ctx)
@@ -35,7 +35,7 @@ class App(tk.Tk):
         self.ctx.frames["input_query"] = self.input_query_frame
 
         self.annotation_table = annotationTableFrame(self, self.ctx)
-        self.annotation_table.grid(column=0, row=3, rowspan=3)
+        self.annotation_table.grid(column=0, row=4, rowspan=3)
         self.ctx.frames["annotation_table"] = self.annotation_table
 
 
@@ -68,9 +68,18 @@ class annotationTableFrame(ttk.Frame, Updatable):
         self.annotation_table.heading('3', text='Operation Chosen')
         self.annotation_table.heading('4', text='Reason')
 
+        self.annotation_table.column('1', width=100, anchor=tk.W)
+        self.annotation_table.column('2', width=300, anchor=tk.W)
+        self.annotation_table.column('3', width=200, anchor=tk.W)
+        self.annotation_table.column('4', width=500, anchor=tk.W)
+
         contacts = []
-        for n in range(1, 10):
-            contacts.append((f'Keyword {n}', f'Identifier {n}', f'Operation Chosen{n}', f'Reason{n}'))
+        contacts.append((f'FROM', f'customer', f'seq scan', f'resoning................'))
+        contacts.append((f'', f'nation', f'seq scan', f'resoning................'))
+        contacts.append((f'WHERE', f'customer.c_nationkey = nation.n_nationkey', f'Hash join', f'resoning................'))
+        contacts.append((f'', f'customer.c_acctbal >= 1000', f'filtered during seq scan', f'resoning................'))
+        contacts.append((f'', f'nation.n_nationkey >= 10', f'filtered during seq scan', f'resoning................'))
+        contacts.append((f'', f'order by', f'Sort', f'resoning................'))
 
         for contact in contacts:
             self.annotation_table.insert('', tk.END, values=contact)
