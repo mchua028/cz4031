@@ -49,10 +49,7 @@ def extract_tables(sql):
 
 if __name__ == '__main__':
     sql = """
-    select customer.c_custkey, customer.c_name, nation.n_name
-    from customer, nation where customer.c_nationkey = nation.n_nationkey 
-    and customer.c_acctbal >= 1000 and nation.n_nationkey >= 10 
-    order by customer.c_custkey desc;
+    select customer.c_custkey from (SELECT * FROM customer WHERE customer.c_custkey > 1)AS customer, nation where customer.c_nationkey = nation.n_nationkey;
     """
 
     tables = ', '.join(extract_tables(sql))

@@ -15,7 +15,7 @@ class App(tk.Tk):
     def __init__(self, cursor: psycopg.Cursor):
         super().__init__()
 
-        self.geometry("800x600")
+        self.geometry("1000x600")
         self.title("Query Analyzer")
 
         self.ctx = Context(cursor)
@@ -27,7 +27,7 @@ class App(tk.Tk):
         self.ctx.frames["annotated_query"] = self.annotated_query_frame
 
         self.visualize_query_plan_frame = VisualizeQueryPlanFrame(self, self.ctx)
-        self.visualize_query_plan_frame.grid(column=1, row=2, rowspan=2)
+        self.visualize_query_plan_frame.grid(column=1, row=2)
         self.ctx.frames["visualize_query_plan"] = self.visualize_query_plan_frame
 
         self.input_query_frame = InputQueryFrame(self, self.ctx)
@@ -35,7 +35,7 @@ class App(tk.Tk):
         self.ctx.frames["input_query"] = self.input_query_frame
 
         self.annotation_table = annotationTableFrame(self, self.ctx)
-        self.annotation_table.grid(column=0, row=4, rowspan=3)
+        self.annotation_table.grid(column=0, row=4)
         self.ctx.frames["annotation_table"] = self.annotation_table
 
 
@@ -101,9 +101,13 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         self.query.grid(column=0,row=2)
 
     def parseSql(self, query):
+        #query = "SELECT * FROM (SELECT * FROM CUSTOMER WHERE ID > 10) WHERE ID <50 ;"
         parsed = sqlparse.parse(query)
         stmt = parsed[0]
-        print(len(stmt.tokens))
+        for i in stmt.tokens:
+            print(i.ttype)
+            print(i.value + "\n")
+        #print(stmt.tokens)
          
         #return sqlparse.parse(query)
 
@@ -124,6 +128,7 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
     def update_changes(self, *args, **kwargs):
         input_query = self.ctx.vars["input_query"].get()
         self.visualize_query_plan["text"] = str(QueryPlanTree(self.ctx.cursor, input_query))
+        print(str(QueryPlanTree(self.ctx.cursor, input_query)))
 
 
 class InputQueryFrame(ttk.Frame, Updatable):
