@@ -5,6 +5,8 @@ from tkinter import ttk
 
 import psycopg
 import sqlparse
+from sqlparse.sql import IdentifierList, Identifier
+from sqlparse.tokens import Keyword, DML
 
 from preprocessing import QueryPlanTree
 
@@ -32,6 +34,10 @@ class App(tk.Tk):
         self.input_query_frame.grid(column=0, row=1)
         self.ctx.frames["input_query"] = self.input_query_frame
 
+        self.annotation_table = annotationTableFrame(self, self.ctx)
+        self.annotation_table.grid(column=0, row=3, rowspan=3)
+        self.ctx.frames["annotation_table"] = self.annotation_table
+
 
 class Updatable(ABC):
     @abstractmethod
@@ -49,6 +55,31 @@ class Context:
         self.frames = {}
         self.cursor = cursor
 
+class annotationTableFrame(ttk.Frame, Updatable):
+    def __init__(self, master: tk.Misc, ctx: Context):
+        super().__init__(master)
+        self.ctx = ctx
+
+        columns = ('1', '2', '3', '4')
+        self.annotation_table = ttk.Treeview(self, columns=columns, show='headings')
+
+        self.annotation_table.heading('1', text='Keyword')
+        self.annotation_table.heading('2', text='Identifier')
+        self.annotation_table.heading('3', text='Operation Chosen')
+        self.annotation_table.heading('4', text='Reason')
+
+        contacts = []
+        for n in range(1, 10):
+            contacts.append((f'Keyword {n}', f'Identifier {n}', f'Operation Chosen{n}', f'Reason{n}'))
+
+        for contact in contacts:
+            self.annotation_table.insert('', tk.END, values=contact)
+
+        self.annotation_table.grid(column=0,row=0, sticky='nsew')
+
+    def update_changes(self, *args, **kwargs):
+        pass
+
 class AnnotatedQueryFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
         super().__init__(master)
@@ -60,9 +91,17 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         self.query = ttk.Label(self, text="")
         self.query.grid(column=0,row=2)
 
+    def parseSql(self, query):
+        parsed = sqlparse.parse(query)
+        stmt = parsed[0]
+        print(len(stmt.tokens))
+         
+        #return sqlparse.parse(query)
+
     def update_changes(self, *args, **kwargs):
         formatted = sqlparse.format(self.ctx.vars["input_query"].get(), reindent=True, keyword_case='upper')
         self.query["text"] = formatted
+        self.parseSql(self.ctx.vars["input_query"].get())
 
 
 class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
@@ -97,10 +136,7 @@ class InputQueryFrame(ttk.Frame, Updatable):
         self.ctx.frames["annotated_query"].update_changes()
         self.ctx.frames["visualize_query_plan"].update_changes()
 
-        #####
-        #print(self.ctx.vars["input_query"])
-        #sql = 'select * from foo where id in (select id from bar);'
-        #print(sqlparse.format(self.ctx.vars["input_query"].get(), reindent=True, keyword_case='upper'))
+
         
 
     def update_changes(self, *args, **kwargs):
