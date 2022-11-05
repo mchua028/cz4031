@@ -81,7 +81,7 @@ class QueryPlanTree:
 		return cur
 	
 	def __str__(self) -> str:
-		return QueryPlanTree.gen_annotation(self.root) 
+		return QueryPlanTree.gen_annotation(self.root, 0) 
 
 	@staticmethod
 	def _str_helper(node: Optional[QueryPlanTreeNode], level: int) -> str:
@@ -102,15 +102,15 @@ class QueryPlanTree:
 		return f"{'    ' * level}-> {node_type} {node.get_primary_info()}{left}{right}"
 
 	@staticmethod
-	def gen_annotation(node: Optional[QueryPlanTreeNode]) -> str:
+	def gen_annotation(node: Optional[QueryPlanTreeNode], step:int):
 		if node is None:
 			return ""
 		
-		left = QueryPlanTree.gen_annotation(node.left)
+		left = QueryPlanTree.gen_annotation(node.left, step)
 		if left != "":
 			left = left + "\n"
 
-		right = QueryPlanTree.gen_annotation(node.right)
+		right = QueryPlanTree.gen_annotation(node.right, step)
 		if right != "":
 			right = right + "\n"
 
@@ -118,7 +118,7 @@ class QueryPlanTree:
 		total_cost: str = node.info["Total Cost"]
 		#del node.info["Node Type"]
 
-		return f"{left}{right} Perform {node_type} on relation: unknown with cost: {total_cost}"
+		return f"{left}{right} Step {step}: Perform {node_type} on relation: unknown with cost: {total_cost}"
 
 	
 		

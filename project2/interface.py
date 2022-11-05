@@ -51,7 +51,8 @@ class Context:
 
     def __init__(self, cursor: psycopg.Cursor) -> None:
         self.vars = {
-            "input_query": tk.StringVar()
+            "input_query": tk.StringVar(),
+            "annotated_query" : tk.StringVar()
         }
         self.frames = {}
         self.cursor = cursor
@@ -111,7 +112,7 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
 
     def update_changes(self, *args, **kwargs):
         formatted = sqlparse.format(self.ctx.vars["input_query"].get(), reindent=True, keyword_case='upper')
-        self.query["text"] = formatted
+        self.query["text"] = self.ctx.vars["annotated_query"].get()
         self.parseSql(self.ctx.vars["input_query"].get())
 
 
@@ -125,8 +126,10 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
     
     def update_changes(self, *args, **kwargs):
         input_query = self.ctx.vars["input_query"].get()
-        self.visualize_query_plan["text"] = str(QueryPlanTree(self.ctx.cursor, input_query))
-        print(str(QueryPlanTree(self.ctx.cursor, input_query)))
+        self.ctx.vars["annotated_query"].set(str(QueryPlanTree(self.ctx.cursor, input_query)))
+        self.visualize_query_plan["text"] = self.ctx.vars["annotated_query"].get()
+        print(self.ctx.vars["annotated_query"].get())
+        
 
 
 class InputQueryFrame(ttk.Frame, Updatable):
@@ -145,8 +148,9 @@ class InputQueryFrame(ttk.Frame, Updatable):
         self.ctx.vars["input_query"].set(
             self.input_query.get("1.0", "end-1c")
         )
-        self.ctx.frames["annotated_query"].update_changes()
         self.ctx.frames["visualize_query_plan"].update_changes()
+        self.ctx.frames["annotated_query"].update_changes()
+        
 
 
         
