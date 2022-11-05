@@ -55,6 +55,12 @@ class QueryPlanTree:
 				cur.right = self._build(subplans[1])
 
 		return cur
+		
+	@staticmethod
+	def from_plan(plan: dict) -> Self:
+		qptree = QueryPlanTree()
+		qptree.root = qptree._build(plan)
+		return qptree
 	
 	def __str__(self) -> str:
 		return QueryPlanTree._str_helper(self.root, 0) 
