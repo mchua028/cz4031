@@ -1,4 +1,4 @@
-from typing import List, Optional, Self
+from typing import Optional, Self
 import json
 import psycopg
 
@@ -22,28 +22,37 @@ class QueryPlanTreeNode:
 				
 class QueryPlanTree:
 	root: Optional[QueryPlanTreeNode]
+	scan_nodes: dict[str, QueryPlanTreeNode]
 
 	def __init__(self):
 		self.root = None
+		self.scan_nodes = {}
 	
 	def __init__(self, cursor: psycopg.Cursor, query: str):
-		plan: dict = explain_query(cursor, query)["Plan"]
+		self.scan_nodes = {}
+
+		plan: dict = explain_query(cursor, query, debug=True)["Plan"]
 		self.root = self._build(plan)
 
-	@staticmethod
-	def _build(plan: dict) -> Optional[QueryPlanTreeNode]:
+	def _build(self, plan: dict) -> Optional[QueryPlanTreeNode]:
 		if "Node Type" not in plan:
 			return None
 		
 		info = {k: v for k, v in plan.items() if k != "Plans"}
 		cur = QueryPlanTreeNode(info)
 
-		subplans: Optional[List[dict]] = plan.get("Plans")
+		# Track scan nodes
+		if "Scan" in plan["Node Type"]:
+			k = f"{plan['Relation Name']} {plan['Alias']}"
+			self.scan_nodes[k] = cur
+
+		# Build subtrees
+		subplans: Optional[list[dict]] = plan.get("Plans")
 		if subplans is not None:
 			if len(subplans) >= 1:
-				cur.left = QueryPlanTree._build(subplans[0])
+				cur.left = self._build(subplans[0])
 			if len(subplans) >= 2:
-				cur.right = QueryPlanTree._build(subplans[1])
+				cur.right = self._build(subplans[1])
 
 		return cur
 	
