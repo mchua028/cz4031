@@ -59,7 +59,6 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
     def update_changes(self, *args, **kwargs):
         pass
 
-
 class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
         super().__init__(master)
@@ -72,7 +71,8 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
         input_query = self.ctx.vars["input_query"].get()
 
         try:
-            self.visualize_query_plan["text"] = str(QueryPlanTree(self.ctx.cursor, input_query))
+            qptree = QueryPlanTree.from_query(input_query, self.ctx.cursor)
+            self.visualize_query_plan["text"] = str(qptree)
             self.ctx.cursor.connection.commit()
         except psycopg.errors.Error as err:
             self.visualize_query_plan["text"] = err.diag.message_primary

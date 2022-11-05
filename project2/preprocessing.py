@@ -1,14 +1,15 @@
 from typing import Optional, Self
-import json
 import psycopg
+
+from itertools import combinations, product
 
 # Assume always binary tree
 class QueryPlanTreeNode:
-	def __init__(self, info: dict, left: Optional[Self] = None, right: Optional[Self] = None):
+	def __init__(self, info: dict={}, left: Optional[Self]=None, right: Optional[Self]=None):
 		self.info = info
 		self.left = left
 		self.right = right
-	
+
 	def get_primary_info(self) -> dict:
 		# List of node types -> https://github.com/postgres/postgres/blob/master/src/backend/commands/explain.c#L1191
 		primary_info = {}
@@ -24,19 +25,23 @@ class QueryPlanTree:
 	root: Optional[QueryPlanTreeNode]
 	scan_nodes: dict[str, QueryPlanTreeNode]
 
-	def __init__(self, cursor: Optional[psycopg.Cursor]=None, query: Optional[str]=None):
-		if query is not None and cursor is None:
-			raise RuntimeError("Database cursor is required when query is specified")
-
+	def __init__(self):
 		self.root = None
 		self.scan_nodes = {}
 
-		# Build from query
-		if cursor is not None and query is not None:
-			plan: dict = explain_query(cursor, query)["Plan"]
-			self.root = self._build(plan)
+	@staticmethod
+	def from_query(query: str, cursor: psycopg.Cursor):
+		plan = query_plan(query, cursor)
+		return QueryPlanTree.from_plan(plan)
+
+	@staticmethod
+	def from_plan(plan: dict):
+		qptree = QueryPlanTree()
+		qptree.root = qptree._build(plan)
+		return qptree
 	
-	def _build(self, plan: dict) -> Optional[QueryPlanTreeNode]:
+	def _build(self, plan: dict):	
+		# Post-order traversal
 		if "Node Type" not in plan:
 			return None
 		
@@ -57,18 +62,12 @@ class QueryPlanTree:
 				cur.right = self._build(subplans[1])
 
 		return cur
-		
-	@staticmethod
-	def from_plan(plan: dict) -> Self:
-		qptree = QueryPlanTree()
-		qptree.root = qptree._build(plan)
-		return qptree
 	
-	def __str__(self) -> str:
+	def __str__(self):
 		return QueryPlanTree._str_helper(self.root, 0) 
 
 	@staticmethod
-	def _str_helper(node: Optional[QueryPlanTreeNode], level: int) -> str:
+	def _str_helper(node: Optional[QueryPlanTreeNode], level: int):
 		if node is None:
 			return ""
 		
@@ -85,12 +84,25 @@ class QueryPlanTree:
 
 		return f"{'    ' * level}-> {node_type} {node.get_primary_info()}{left}{right}"
 
-def explain_query(cursor: psycopg.Cursor, query: str, debug: bool = False) -> dict:
-	cursor.execute(
-		f"EXPLAIN (FORMAT JSON, ANALYZE) {query}"
-	)
-	query_explanation = cursor.fetchone()[0][0]
-	if debug:
-		print("Query Explanation:", json.dumps(query_explanation, indent=2))
+def query_plan(query: str, cursor: psycopg.Cursor) -> dict:
+	cursor.execute(f"EXPLAIN (FORMAT JSON) {query}")
+	return cursor.fetchone()[0][0]["Plan"]
 
-	return query_explanation
+def alternative_query_plans(query: str, cursor: psycopg.Cursor):
+	scan_types = ["bitmapscan", "indexscan", "indexonlyscan", "seqscan", "tidscan"]
+	join_types = ["hashjoin", "mergejoin", "nestloop"]
+
+	for disabled_scan_types, disabled_join_types in product(
+		combinations(scan_types, len(scan_types) - 1),
+		combinations(join_types, len(join_types) - 1),
+	):
+		# Enforce single scan type and single join type
+		for disabled_type in disabled_scan_types + disabled_join_types:
+			cursor.execute(f"SET LOCAL enable_{disabled_type}=false")
+
+		yield query_plan(query, cursor)
+		cursor.connection.rollback()
+
+def alternative_query_plan_trees(query: str, cursor: psycopg.Cursor):
+	for plan in alternative_query_plans(query, cursor):
+		yield QueryPlanTree.from_plan(plan)
