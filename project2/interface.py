@@ -106,7 +106,7 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         #query = "SELECT * FROM (SELECT * FROM CUSTOMER WHERE ID > 10) WHERE ID <50 ;"
         parsed = sqlparse.parse(query)
         stmt = parsed[0]
-        print(stmt.tokens)
+        #print(stmt.tokens)
          
         #return sqlparse.parse(query)
 
