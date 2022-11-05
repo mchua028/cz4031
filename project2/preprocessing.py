@@ -24,16 +24,18 @@ class QueryPlanTree:
 	root: Optional[QueryPlanTreeNode]
 	scan_nodes: dict[str, QueryPlanTreeNode]
 
-	def __init__(self):
+	def __init__(self, cursor: Optional[psycopg.Cursor]=None, query: Optional[str]=None):
+		if query is not None and cursor is None:
+			raise RuntimeError("Database cursor is required when query is specified")
+
 		self.root = None
 		self.scan_nodes = {}
+
+		# Build from query
+		if cursor is not None and query is not None:
+			plan: dict = explain_query(cursor, query)["Plan"]
+			self.root = self._build(plan)
 	
-	def __init__(self, cursor: psycopg.Cursor, query: str):
-		self.scan_nodes = {}
-
-		plan: dict = explain_query(cursor, query, debug=True)["Plan"]
-		self.root = self._build(plan)
-
 	def _build(self, plan: dict) -> Optional[QueryPlanTreeNode]:
 		if "Node Type" not in plan:
 			return None
