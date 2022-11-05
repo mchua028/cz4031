@@ -61,6 +61,7 @@ class QueryPlanTree:
 	def __init__(self, cursor: psycopg.Cursor, query: str):
 		plan: dict = explain_query(cursor, query)["Plan"]
 		self.root = self._build(plan)
+		print(plan)
 		QueryPlanTree.postOrder(self.root)
 	
 	@staticmethod
@@ -117,11 +118,19 @@ class QueryPlanTree:
 			right = right + "\n"
 		step = stp
 
-		node_type: str = node.info["Node Type"]
-		total_cost: str = node.info["Total Cost"]
-		#del node.info["Node Type"]
+		#node_type: str = node.info["Node Type"]
+		#total_cost: str = node.info["Total Cost"]
 
-		return (f"{left}{right} Step {step}: Perform {node_type} on relation: unknown with cost: {total_cost}", step+1)
+		rela_name = "unknown"
+		for k, v in node.info.items():
+			if k == "Node Type": node_type = v
+			if k == "Total Cost": total_cost = v
+			if k == "Relation Name": 
+				print(f"{v}\n")
+				rela_name = v 
+
+
+		return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name} with cost: {total_cost}", step+1)
 
 	
 		
