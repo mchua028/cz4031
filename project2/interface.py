@@ -62,7 +62,8 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
 
     def update_changes(self, *args, **kwargs):
         input_query = self.ctx.vars["input_query"].get()
-        self.ctx.vars["annotated_query"].set(str(QueryPlanTree.get_annotation(input_query, self.ctx.cursor)))
+        temp, temp2, temp3 = QueryPlanTree.get_annotation(input_query, self.ctx.cursor)
+        self.ctx.vars["annotated_query"].set(temp)
         self.step_by_step["text"] = self.ctx.vars["annotated_query"].get()
 
 class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
