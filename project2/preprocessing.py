@@ -63,7 +63,7 @@ class QueryPlanTree:
 				rela_name = node.info.get("Relation Name")
 				total_cost = node.info.get("Total Cost")
 				relations.append(rela_name)
-				return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name} with cost: {total_cost}\n", step+1, relations)
+				return (f"{left}{right}{step}: Perform {node_type} on {rela_name} with cost: {total_cost}\n", step+1, relations)
 
 			else:
 				node_type = node.info.get("Node Type")
@@ -71,7 +71,7 @@ class QueryPlanTree:
 				rela_name1 = relations.pop()
 				rela_name2 = relations.pop()
 				relations.append(f"({rela_name1} join {rela_name2})")
-				return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name1} and {rela_name2} with cost: {total_cost}\n", step+1, relations)
+				return (f"{left}{right}{step}: Perform {node_type} on {rela_name1} and {rela_name2} with cost: {total_cost}\n", step+1, relations)
 
 		else:
 			return(f"{left}{right}", step, relations)
