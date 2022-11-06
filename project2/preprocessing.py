@@ -36,7 +36,18 @@ class QueryPlanTreeNode:
 		#print(self.desc)
 		return primary_info
 
-
+	def retrieve_join_relation(self) -> None:
+		node_info = self.info
+		join_types_list = ['Merge Join', 'Hash Join']
+		cond_list = ['Hash Cond', 'Merge Cond']
+		if node_info['Node Type'] in join_types_list:
+			cond = ''
+			if node_info['Node Type'] == 'Hash Join':
+				cond = node_info['Hash Cond'].strip("()")
+			elif node_info['Node Type'] == 'Merge Join':
+				cond = node_info['Merge Cond'].strip("()")
+			join_table_list = [key.split(".")[0] for key in cond.split(" = ")]
+			node_info['Relation Name'] = f'{join_table_list[0]} and {join_table_list[1]}'
 	
 	
 	
@@ -79,7 +90,7 @@ class QueryPlanTree:
 			if len(subplans) >= 2:
 				cur.right = QueryPlanTree._build(subplans[1])
 		
-		QueryPlanTree.retrieve_join_relation(cur)
+		cur.retrieve_join_relation()
 		return cur
 	
 	def __str__(self) -> str:
@@ -133,19 +144,7 @@ class QueryPlanTree:
 
 		return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name} with cost: {total_cost}", step+1)
 
-	@staticmethod
-	def retrieve_join_relation(node: Optional[QueryPlanTreeNode]) -> None:
-		node_info = node.info
-		join_types_list = ['Merge Join', 'Hash Join']
-		cond_list = ['Hash Cond', 'Merge Cond']
-		if node_info['Node Type'] in join_types_list:
-			cond = ''
-			if node_info['Node Type'] == 'Hash Join':
-				cond = node_info['Hash Cond'].strip("()")
-			elif node_info['Node Type'] == 'Merge Join':
-				cond = node_info['Merge Cond'].strip("()")
-			join_table_list = [key.split(".")[0] for key in cond.split(" = ")]
-			node_info['Relation Name'] = f'{join_table_list[0]} and {join_table_list[1]}'
+
 		
 def explain_query(cursor: psycopg.Cursor, query: str, debug: bool = False) -> dict:
 	cursor.execute(
