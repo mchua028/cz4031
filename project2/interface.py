@@ -43,7 +43,8 @@ class Context:
 
     def __init__(self, cursor: psycopg.Cursor) -> None:
         self.vars = {
-            "input_query": tk.StringVar()
+            "input_query": tk.StringVar(),
+            "annotated_query" : tk.StringVar()
         }
         self.frames = {}
         self.cursor = cursor
@@ -56,8 +57,13 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         self.annotated_query = ttk.Label(self, text="Annotation")
         self.annotated_query.grid(column=0,row=0)
 
+        self.step_by_step = ttk.Label(self, text="")
+        self.step_by_step.grid(column=0,row=2)
+
     def update_changes(self, *args, **kwargs):
-        pass
+        input_query = self.ctx.vars["input_query"].get()
+        self.ctx.vars["annotated_query"].set(str(QueryPlanTree.get_annotation(input_query, self.ctx.cursor)))
+        self.step_by_step["text"] = self.ctx.vars["annotated_query"].get()
 
 class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
@@ -74,6 +80,7 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
             qptree = QueryPlanTree.from_query(input_query, self.ctx.cursor)
             self.visualize_query_plan["text"] = str(qptree)
             self.ctx.cursor.connection.commit()
+        
         except psycopg.errors.Error as err:
             self.visualize_query_plan["text"] = err.diag.message_primary
             self.ctx.cursor.connection.rollback()
@@ -95,8 +102,8 @@ class InputQueryFrame(ttk.Frame, Updatable):
         self.ctx.vars["input_query"].set(
             self.input_query.get("1.0", "end-1c")
         )
-        self.ctx.frames["annotated_query"].update_changes()
         self.ctx.frames["visualize_query_plan"].update_changes()
+        self.ctx.frames["annotated_query"].update_changes()
 
     def update_changes(self, *args, **kwargs):
         pass

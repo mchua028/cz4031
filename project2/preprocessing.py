@@ -29,6 +29,7 @@ class QueryPlanTree:
 		self.root = None
 		self.scan_nodes = {}
 
+
 	@staticmethod
 	def from_query(query: str, cursor: psycopg.Cursor):
 		plan = query_plan(query, cursor)
@@ -39,6 +40,41 @@ class QueryPlanTree:
 		qptree = QueryPlanTree()
 		qptree.root = qptree._build(plan)
 		return qptree
+
+	@staticmethod
+	def get_annotation(query: str, cursor: psycopg.Cursor):
+		plan = query_plan(query, cursor)
+		relation_stack = []
+		tree = QueryPlanTree.from_plan(plan)
+		return tree.gen_annotation(relation_stack, tree.root, 1)
+
+	@staticmethod
+	def gen_annotation(relations: list[str], node: Optional[QueryPlanTreeNode], step:int):
+		if node is None:
+			return ("", step, relations)
+		
+		left, step, relations = QueryPlanTree.gen_annotation(relations, node.left, step)
+
+		right, step, relations = QueryPlanTree.gen_annotation(relations, node.right, step)
+		
+		if("Join Type" in node.info.keys() or "Relation Name" in node.info.keys()):
+			if("Relation Name" in node.info.keys()):
+				node_type = node.info.get("Node Type")
+				rela_name = node.info.get("Relation Name")
+				total_cost = node.info.get("Total Cost")
+				relations.append(rela_name)
+				return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name} with cost: {total_cost}\n", step+1, relations)
+
+			else:
+				node_type = node.info.get("Node Type")
+				total_cost = node.info.get("Total Cost")
+				rela_name1 = relations.pop()
+				rela_name2 = relations.pop()
+				relations.append(f"({rela_name1} join {rela_name2})")
+				return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name1} and {rela_name2} with cost: {total_cost}\n", step+1, relations)
+
+		else:
+			return(f"{left}{right}", step, relations)
 	
 	def _build(self, plan: dict):	
 		# Post-order traversal
@@ -49,7 +85,7 @@ class QueryPlanTree:
 		cur = QueryPlanTreeNode(info)
 
 		# Track scan nodes
-		if "Scan" in plan["Node Type"]:
+		if "Scan" in plan["Node Type"] and plan["Node Type"] != "Bitmap Index Scan":
 			k = f"{plan['Relation Name']} {plan['Alias']}"
 			self.scan_nodes[k] = cur
 
@@ -65,6 +101,7 @@ class QueryPlanTree:
 	
 	def __str__(self):
 		return QueryPlanTree._str_helper(self.root, 0) 
+
 
 	@staticmethod
 	def _str_helper(node: Optional[QueryPlanTreeNode], level: int):
