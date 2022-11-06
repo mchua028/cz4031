@@ -110,25 +110,22 @@ class QueryPlanTree:
 			return ("", step)
 		
 		left, step = QueryPlanTree.gen_annotation(node.left, step)
-		#if left != "":
-		#	left = left + "\n"
-		#step = stp
 
 		right, step = QueryPlanTree.gen_annotation(node.right, step)
-		#if right != "":
-		#	right = right + "\n"
-		#step = stp
 		
 		if("Join Type" in node.info.keys() or "Relation Name" in node.info.keys()):
-			rela_name = "unknown"
-			for k, v in node.info.items():
-				if k == "Node Type": node_type = v
-				if k == "Total Cost": total_cost = v
-				if k == "Relation Name": 
-					rela_name = v 
+			if("Relation Name" in node.info.keys()):
+				node_type = node.info.get("Node Type")
+				rela_name = node.info.get("Relation Name")
+				total_cost = node.info.get("Total Cost")
+				return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name} with cost: {total_cost}\n", step+1)
 
-
-			return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name} with cost: {total_cost}\n", step+1)
+			else:
+				node_type = node.info.get("Node Type")
+				total_cost = node.info.get("Total Cost")
+				rela_name1 = "1"
+				rela_name2 = "2"
+				return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name1} and {rela_name2} with cost: {total_cost}\n", step+1)
 
 		else:
 			return(f"{left}{right}", step)
