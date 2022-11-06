@@ -35,6 +35,7 @@ class QueryPlanTreeNode:
 		self.get_annotation()
 		#print(self.desc)
 		return primary_info
+		
 
 
 	
@@ -120,17 +121,20 @@ class QueryPlanTree:
 
 		#node_type: str = node.info["Node Type"]
 		#total_cost: str = node.info["Total Cost"]
+		
+		if("Join Type" in node.info.keys() or "Relation Name" in node.info.keys()):
+			rela_name = "unknown"
+			for k, v in node.info.items():
+				if k == "Node Type": node_type = v
+				if k == "Total Cost": total_cost = v
+				if k == "Relation Name": 
+					rela_name = v 
 
-		rela_name = "unknown"
-		for k, v in node.info.items():
-			if k == "Node Type": node_type = v
-			if k == "Total Cost": total_cost = v
-			if k == "Relation Name": 
-				print(f"{v}\n")
-				rela_name = v 
 
+			return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name} with cost: {total_cost}", step+1)
 
-		return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name} with cost: {total_cost}", step+1)
+		else:
+			return(f"{left}{right}", step)
 
 	
 		
