@@ -136,10 +136,15 @@ class QueryPlanTree:
 	@staticmethod
 	def retrieve_join_relation(node: Optional[QueryPlanTreeNode]) -> None:
 		node_info = node.info
-		join_types_list = ['Merge Join', 'Hash Join', 'Nested Loop']
+		join_types_list = ['Merge Join', 'Hash Join']
+		cond_list = ['Hash Cond', 'Merge Cond']
 		if node_info['Node Type'] in join_types_list:
-			hash_cond = node_info['Hash Cond'].strip("()")
-			join_table_list = [key.split(".")[0] for key in hash_cond.split(" = ")]
+			cond = ''
+			if node_info['Node Type'] == 'Hash Join':
+				cond = node_info['Hash Cond'].strip("()")
+			elif node_info['Node Type'] == 'Merge Join':
+				cond = node_info['Merge Cond'].strip("()")
+			join_table_list = [key.split(".")[0] for key in cond.split(" = ")]
 			node_info['Relation Name'] = f'{join_table_list[0]} and {join_table_list[1]}'
 		
 def explain_query(cursor: psycopg.Cursor, query: str, debug: bool = False) -> dict:
