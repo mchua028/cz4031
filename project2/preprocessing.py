@@ -3,12 +3,27 @@ import psycopg
 
 from itertools import combinations, product
 
+class Relation:
+	def __init__(self, relation_name: str, alias: str):
+		self.relation_name = relation_name
+		self.alias = alias
+	
+	"""
+	When with_duplicate_alias = True, alias is included only if alias != relation name
+	"""
+	def __str__(self, with_duplicate_alias=False) -> str:
+		if not with_duplicate_alias and self.relation_name == self.alias:
+			return self.relation_name	
+		else:
+			return f"{self.relation_name} {self.alias}"
+
 # Assume always binary tree
 class QueryPlanTreeNode:
-	def __init__(self, info: dict={}, left: Optional[Self]=None, right: Optional[Self]=None):
+	def __init__(self, info: dict={}, left: Optional[Self]=None, right: Optional[Self]=None, involving_relations: set[Relation] = set()):
 		self.info = info
 		self.left = left
 		self.right = right
+		self.involving_relations = involving_relations
 
 	def get_primary_info(self) -> dict:
 		# List of node types -> https://github.com/postgres/postgres/blob/master/src/backend/commands/explain.c#L1191
@@ -41,7 +56,7 @@ class QueryPlanTree:
 		return qptree
 	
 	def _build(self, plan: dict):	
-		# Post-order traversal
+		# Pre-order traversal
 		if "Node Type" not in plan:
 			return None
 		
@@ -50,6 +65,9 @@ class QueryPlanTree:
 
 		# Track scan nodes
 		if "Scan" in plan["Node Type"]:
+			cur.involving_relations.add(
+				Relation(plan["Relation Name"], plan["Alias"])
+			)
 			k = f"{plan['Relation Name']} {plan['Alias']}"
 			self.scan_nodes[k] = cur
 
@@ -58,8 +76,14 @@ class QueryPlanTree:
 		if subplans is not None:
 			if len(subplans) >= 1:
 				cur.left = self._build(subplans[0])
+				cur.involving_relations.update(
+					cur.left.involving_relations
+				)
 			if len(subplans) >= 2:
 				cur.right = self._build(subplans[1])
+				cur.involving_relations.update(
+					cur.right.involving_relations
+				)
 
 		return cur
 	
