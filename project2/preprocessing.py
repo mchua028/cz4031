@@ -79,6 +79,7 @@ class QueryPlanTree:
 			if len(subplans) >= 2:
 				cur.right = QueryPlanTree._build(subplans[1])
 		
+		QueryPlanTree.retrieve_join_relation(cur)
 		return cur
 	
 	def __str__(self) -> str:
@@ -132,7 +133,13 @@ class QueryPlanTree:
 
 		return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name} with cost: {total_cost}", step+1)
 
-	
+	@staticmethod
+	def retrieve_join_relation(node: Optional[QueryPlanTreeNode]) -> None:
+		node_info = node.info
+		if node_info['Node Type'] == "Hash Join":
+			hash_cond = node_info['Hash Cond'].strip("()")
+			join_table_list = [key.split(".")[0] for key in hash_cond.split(" = ")]
+			node_info['Relation Name'] = f'{join_table_list[0]} and {join_table_list[1]}'
 		
 def explain_query(cursor: psycopg.Cursor, query: str, debug: bool = False) -> dict:
 	cursor.execute(
