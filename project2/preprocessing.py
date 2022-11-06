@@ -9,19 +9,6 @@ class QueryPlanTreeNode:
 		self.left = left
 		self.right = right
 		self.desc = desc
-
-	def get_annotation(self) -> None: 
-		types=['Hash Cond', 'Cond'] #unsure if there are more types of filtering keys
-		for k in self.info.items():
-			if k[0] == "Node Type":
-				self.desc += "Perform "+k[1]
-			elif k[0] == "Relation Name":
-				self.desc += " on table "+(k[1].upper())
-			elif k[0] == "Alias":
-				self.desc += " as "+k[1]
-			elif k[0] in types:
-				self.desc += " and filtering on "+k[1]
-		
 		
 
 	def get_primary_info(self) -> dict:
@@ -32,8 +19,7 @@ class QueryPlanTreeNode:
 				or k == "Alias" or k == "Group Key" or k == "Strategy" \
 				or ("Filter" in k and "Removed by" not in k) or "Cond" in k:
 				primary_info[k] = v
-		self.get_annotation()
-		#print(self.desc)
+
 		return primary_info
 		
 
@@ -47,23 +33,11 @@ class QueryPlanTree:
 
 	def __init__(self):
 		self.root = None
-	
-	def postOrder(root) -> str:
-		if root==None:
-			return ""
-        #traverse left subtree
-		QueryPlanTree.postOrder(root.left)
-        #traverse right subtree
-		QueryPlanTree.postOrder(root.right)
-        #traverse root
-		#print(root.info)
-		#print(root.desc)
+
 	
 	def __init__(self, cursor: psycopg.Cursor, query: str):
 		plan: dict = explain_query(cursor, query)["Plan"]
 		self.root = self._build(plan)
-		print(plan)
-		QueryPlanTree.postOrder(self.root)
 	
 	@staticmethod
 	def _build(plan: dict) -> Optional[QueryPlanTreeNode]:
@@ -83,7 +57,8 @@ class QueryPlanTree:
 		return cur
 	
 	def __str__(self) -> str:
-		annotated, step = QueryPlanTree.gen_annotation(self.root, 1) 
+		relation_stack = []
+		annotated, step, relation_stack = QueryPlanTree.gen_annotation(relation_stack, self.root, 1)
 		return annotated
 
 	@staticmethod
@@ -105,30 +80,32 @@ class QueryPlanTree:
 		return f"{'    ' * level}-> {node_type} {node.get_primary_info()}{left}{right}"
 
 	@staticmethod
-	def gen_annotation(node: Optional[QueryPlanTreeNode], step:int):
+	def gen_annotation(relations: List[str], node: Optional[QueryPlanTreeNode], step:int):
 		if node is None:
-			return ("", step)
+			return ("", step, relations)
 		
-		left, step = QueryPlanTree.gen_annotation(node.left, step)
+		left, step, relations = QueryPlanTree.gen_annotation(relations, node.left, step)
 
-		right, step = QueryPlanTree.gen_annotation(node.right, step)
+		right, step, relations = QueryPlanTree.gen_annotation(relations, node.right, step)
 		
 		if("Join Type" in node.info.keys() or "Relation Name" in node.info.keys()):
 			if("Relation Name" in node.info.keys()):
 				node_type = node.info.get("Node Type")
 				rela_name = node.info.get("Relation Name")
 				total_cost = node.info.get("Total Cost")
-				return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name} with cost: {total_cost}\n", step+1)
+				relations.append(rela_name)
+				return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name} with cost: {total_cost}\n", step+1, relations)
 
 			else:
 				node_type = node.info.get("Node Type")
 				total_cost = node.info.get("Total Cost")
-				rela_name1 = "1"
-				rela_name2 = "2"
-				return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name1} and {rela_name2} with cost: {total_cost}\n", step+1)
+				rela_name1 = relations.pop()
+				rela_name2 = relations.pop()
+				relations.append(f"({rela_name1} join {rela_name2})")
+				return (f"{left}{right} Step {step}: Perform {node_type} on {rela_name1} and {rela_name2} with cost: {total_cost}\n", step+1, relations)
 
 		else:
-			return(f"{left}{right}", step)
+			return(f"{left}{right}", step, relations)
 
 	
 		
