@@ -136,7 +136,8 @@ class QueryPlanTree:
 	@staticmethod
 	def retrieve_join_relation(node: Optional[QueryPlanTreeNode]) -> None:
 		node_info = node.info
-		if node_info['Node Type'] == "Hash Join":
+		join_types_list = ['Merge Join', 'Hash Join']
+		if node_info['Node Type'] in join_types_list:
 			hash_cond = node_info['Hash Cond'].strip("()")
 			join_table_list = [key.split(".")[0] for key in hash_cond.split(" = ")]
 			node_info['Relation Name'] = f'{join_table_list[0]} and {join_table_list[1]}'
