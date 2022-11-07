@@ -56,45 +56,18 @@ class QueryPlanTree:
 		qptree.root = qptree._build(plan)
 		return qptree
 
-	#@staticmethod
-	#def get_annotation(query: str, cursor: psycopg.Cursor):
-	#	plan = query_plan(query, cursor)
-	#	relation_stack = []
-	#	tree = QueryPlanTree.from_plan(plan)
-	#	return tree.gen_annotation(relation_stack, tree.root, 1)
-
 	def get_annotation(self):
-		relation_stack = []
-		temp, temp2, temp3 = self._get_annotation_helper(relation_stack, self.root, 1)
-		return temp
+		return QueryPlanTree._get_annotation_helper(self.root, 1)[0]
 
 	@staticmethod
-	def _get_annotation_helper(relations: list[str], node: Optional[QueryPlanTreeNode], step:int):
+	def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int):
 		if node is None:
-			return ("", step, relations)
+			return "", step
 		
-		left, step, relations = QueryPlanTree._get_annotation_helper(relations, node.left, step)
+		left, step = QueryPlanTree._get_annotation_helper(node.left, step)
+		right, step = QueryPlanTree._get_annotation_helper(node.right, step)
 
-		right, step, relations = QueryPlanTree._get_annotation_helper(relations, node.right, step)
-		
-		if("Join Type" in node.info.keys() or "Relation Name" in node.info.keys()):
-			if("Relation Name" in node.info.keys()):
-				node_type = node.info.get("Node Type")
-				rela_name = node.info.get("Relation Name")
-				total_cost = node.info.get("Total Cost")
-				relations.append(rela_name)
-				return (f"{left}{right}{step}: Perform {node_type} on {rela_name} with cost: {total_cost}\n", step+1, relations)
-
-			else:
-				node_type = node.info.get("Node Type")
-				total_cost = node.info.get("Total Cost")
-				rela_name1 = relations.pop()
-				rela_name2 = relations.pop()
-				relations.append(f"({rela_name1} join {rela_name2})")
-				return (f"{left}{right}{step}: Perform {node_type} on {rela_name1} and {rela_name2} with cost: {total_cost}\n", step+1, relations)
-
-		else:
-			return(f"{left}{right}", step, relations)
+		return f"{left}{right}\n{step}. Perform {node.info['Node Type']}", step + 1
 	
 	def _build(self, plan: dict):	
 		# Post-order traversal
