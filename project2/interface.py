@@ -52,29 +52,29 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         super().__init__(master)
         self.ctx = ctx
 
-        self.annotated_query = ttk.Label(self, text="Annotation")
-        self.annotated_query.grid(column=0,row=0)
+        self.annotated_query_label = ttk.Label(self, text="Annotation")
+        self.annotated_query_label.grid(column=0,row=0)
 
     def update_changes(self, *args, **kwargs):
-        self.annotated_query["text"] = kwargs["qptree"].get_annotation()
+        self.annotated_query_label["text"] = kwargs["qptree"].get_annotation()
 
 class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
         super().__init__(master)
         self.ctx = ctx
 
-        self.visualize_query_plan = ttk.Label(self, text="Visualization")
-        self.visualize_query_plan.grid()
+        self.visualize_query_plan_label = ttk.Label(self, text="Visualization")
+        self.visualize_query_plan_label.grid()
     
     def update_changes(self, *args, **kwargs):
-        self.visualize_query_plan["text"] = kwargs["qptree"].get_visualization()
+        self.visualize_query_plan_label["text"] = kwargs["qptree"].get_visualization()
 
 class InputQueryFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
         super().__init__(master)
 
-        self.input_query = tk.Text(self, height=10, width=50)
-        self.input_query.grid(row=0)
+        self.input_query_text = tk.Text(self, height=10, width=50)
+        self.input_query_text.grid(row=0)
 
         self.analyze_query_button = ttk.Button(self, text="Analyze Query", command=self.analyze_query, padding=10)
         self.analyze_query_button.grid(row=1)
@@ -82,7 +82,7 @@ class InputQueryFrame(ttk.Frame, Updatable):
         self.ctx = ctx
     
     def analyze_query(self):
-        input_query = self.input_query.get("1.0", "end-1c")
+        input_query = self.input_query_text.get("1.0", "end-1c")
         self.ctx.vars["input_query"].set(input_query)
 
         qptree = QueryPlanTree.from_query(input_query, self.ctx.cursor)
