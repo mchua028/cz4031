@@ -138,10 +138,7 @@ class QueryPlanTree:
 		if right != "":
 			right = "\n" + right 
 
-		node_type: str = node.info["Node Type"]
-		del node.info["Node Type"]
-
-		return f"{'    ' * level}-> {node_type} {node.get_primary_info()}{left}{right}"
+		return f"{'    ' * level}-> {node.get_primary_info()}{left}{right}"
 
 def query_plan(query: str, cursor: psycopg.Cursor) -> dict:
 	cursor.execute(f"EXPLAIN (FORMAT JSON) {query}")
