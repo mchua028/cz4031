@@ -121,20 +121,19 @@ class QueryPlanTree:
 
 		return QueryPlanTreeNode(info, left, right, involving_relations)
 	
-	def __str__(self):
-		return QueryPlanTree._str_helper(self.root, 0) 
-
+	def get_visualization(self):
+		return QueryPlanTree._get_visualization_helper(self.root, 0) 
 
 	@staticmethod
-	def _str_helper(node: Optional[QueryPlanTreeNode], level: int):
+	def _get_visualization_helper(node: Optional[QueryPlanTreeNode], level: int):
 		if node is None:
 			return ""
 		
-		left = QueryPlanTree._str_helper(node.left, level + 1)
+		left = QueryPlanTree._get_visualization_helper(node.left, level + 1)
 		if left != "":
 			left = "\n" + left
 
-		right = QueryPlanTree._str_helper(node.right, level + 1)
+		right = QueryPlanTree._get_visualization_helper(node.right, level + 1)
 		if right != "":
 			right = "\n" + right 
 
