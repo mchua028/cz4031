@@ -109,7 +109,6 @@ def query_plan(query: str, cursor: psycopg.Cursor) -> dict:
 	cursor.execute(f"EXPLAIN (FORMAT JSON) {query}")
 	return cursor.fetchone()[0][0]["Plan"]
 
-# Generate the alternative Query plan
 def alternative_query_plans(query: str, cursor: psycopg.Cursor):
 	scan_types = ["bitmapscan", "indexscan", "indexonlyscan", "seqscan", "tidscan"]
 	join_types = ["hashjoin", "mergejoin", "nestloop"]
@@ -125,8 +124,6 @@ def alternative_query_plans(query: str, cursor: psycopg.Cursor):
 		yield query_plan(query, cursor)
 		cursor.connection.rollback()
 
-#  Generate the alternative q plan tree
-#  returns a generator object
 def alternative_query_plan_trees(query: str, cursor: psycopg.Cursor):
 	print(query)
 	for plan in alternative_query_plans(query, cursor):
@@ -138,16 +135,14 @@ def traverse_aqp(node: Optional[QueryPlanTreeNode], join_nodes_dict: dict):
 	traverse_aqp(node.left, join_nodes_dict)
 	traverse_aqp(node.right, join_nodes_dict)
 	
-	join_types_list = ["Nested Loop", "Merge Join", "Hash Join"]
+	join_types_set = {"Nested Loop", "Merge Join", "Hash Join"}
 	node_info = node.info
-	print(node.info)
 
-	count = 0
 	relation_list = []
 	for inv_relation in node.involving_relations:
 		relation_list.append(f"{inv_relation.relation_name} {inv_relation.alias}")
-		count += 1
-	if node_info['Node Type'] in join_types_list:
+		
+	if node_info['Node Type'] in join_types_set:
 		relation_key = ' '.join(relation_list)
 		node_cost = node_info['Total Cost'] - node_info['Startup Cost']
 		join_type = node_info['Node Type']
@@ -155,17 +150,9 @@ def traverse_aqp(node: Optional[QueryPlanTreeNode], join_nodes_dict: dict):
 			join_nodes_dict[relation_key][join_type] = node_cost
 		else:
 			join_nodes_dict[relation_key] = {join_type: node_cost}
-	print("\n")
 
 def handle_join_nodes(aqp_list: list[QueryPlanTree]) -> dict[str: dict]:
 	join_nodes_dict = dict()
 	for aqp in aqp_list: 
-		print("AQP")
-		print(aqp)
-		print("\nTraversing the aqp\n")
 		traverse_aqp(aqp.root, join_nodes_dict)
-	print("\n###\n")
-	for k, v in join_nodes_dict.items():
-		print(k, ' : ', v, '\n')
-	# print(join_nodes_dict)
-	print("###")
+	return join_nodes_dict
