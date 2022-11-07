@@ -92,15 +92,6 @@ class QueryPlanTree:
 			involving_relations.add(Relation(plan["Relation Name"], plan["Alias"]))
 
 		return QueryPlanTreeNode(info, left, right, involving_relations)
-	
-	# def get_nodes_info(self):
-	# 	nodes_info=[]
-	# 	nodes_info.append(self.root.info)
-	# 	if (self.root.right is not None):
-	# 		nodes_info.append(get_nodes_info(self.root.right))
-	# 	if (self.root.left is not None):
-	# 		nodes_info.append(get_nodes_info(self.root.left))
-	# 	return nodes_info
 	 
 
 	def __str__(self):
