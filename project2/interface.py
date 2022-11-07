@@ -1,6 +1,7 @@
 import tkinter as tk
 from abc import ABC, abstractmethod
-from tkinter import ttk
+from tkinter import ttk, messagebox
+from typing import Optional
 
 import psycopg
 
@@ -55,7 +56,10 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         self.annotated_query_label.grid(column=0, row=1)
 
     def update_changes(self, *args, **kwargs):
-        self.annotated_query_label["text"] = kwargs["qptree"].get_annotation()
+        if kwargs["qptree"] is None:
+            self.annotated_query_label["text"] = ""
+        else:
+            self.annotated_query_label["text"] = kwargs["qptree"].get_annotation()
 
 class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
@@ -68,7 +72,10 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
         self.visualize_query_plan_label.grid(row=1)
     
     def update_changes(self, *args, **kwargs):
-        self.visualize_query_plan_label["text"] = kwargs["qptree"].get_visualization()
+        if kwargs["qptree"] is None:
+            self.visualize_query_plan_label["text"] = ""
+        else:
+            self.visualize_query_plan_label["text"] = kwargs["qptree"].get_visualization()
 
 class InputQueryFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
@@ -88,7 +95,13 @@ class InputQueryFrame(ttk.Frame, Updatable):
         input_query = self.input_query_text.get("1.0", "end-1c")
         self.ctx.vars["input_query"].set(input_query)
 
-        qptree = QueryPlanTree.from_query(input_query, self.ctx.cursor)
+        qptree: Optional[QueryPlanTree] = None
+        try:
+            qptree = QueryPlanTree.from_query(input_query, self.ctx.cursor)
+        except Exception as err:
+            messagebox.showerror("Error", err)
+        
+        self.ctx.cursor.connection.rollback()
         self.ctx.frames["visualize_query_plan"].update_changes(qptree=qptree)
         self.ctx.frames["annotated_query"].update_changes(qptree=qptree)
 
