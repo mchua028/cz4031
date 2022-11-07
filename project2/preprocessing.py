@@ -3,6 +3,12 @@ import psycopg
 
 from itertools import combinations, product
 
+SCAN_TYPES = {"Bitmap Heap Scan", "Bitmap Index Scan", "Index Scan", "Index Only Scan", "Seq Scan", "Tid Scan"}
+SCAN_TYPE_FLAGS = {"bitmapscan", "indexscan", "indexonlyscan", "seqscan", "tidscan"}
+
+JOIN_TYPES = {"Hash Join", "Merge Join", "Nested Loop"}
+JOIN_TYPE_FLAGS ={"hashjoin", "mergejoin", "nestloop"}
+
 class Relation:
 	def __init__(self, relation_name: str, alias: str):
 		self.relation_name = relation_name
@@ -117,12 +123,9 @@ def query_plan(query: str, cursor: psycopg.Cursor) -> dict:
 	return cursor.fetchone()[0][0]["Plan"]
 
 def alternative_query_plans(query: str, cursor: psycopg.Cursor):
-	scan_types = ["bitmapscan", "indexscan", "indexonlyscan", "seqscan", "tidscan"]
-	join_types = ["hashjoin", "mergejoin", "nestloop"]
-
 	for disabled_scan_types, disabled_join_types in product(
-		combinations(scan_types, len(scan_types) - 1),
-		combinations(join_types, len(join_types) - 1),
+		combinations(SCAN_TYPE_FLAGS, len(SCAN_TYPE_FLAGS) - 1),
+		combinations(JOIN_TYPE_FLAGS, len(JOIN_TYPE_FLAGS) - 1),
 	):
 		# Enforce single scan type and single join type
 		for disabled_type in disabled_scan_types + disabled_join_types:
