@@ -44,12 +44,13 @@ class QueryPlanTreeNode:
 				
 class QueryPlanTree:
 	root: Optional[QueryPlanTreeNode]
-	scan_nodes: dict[str, QueryPlanTreeNode]
+	scan_nodes: list[QueryPlanTreeNode]
+	join_nodes: list[QueryPlanTreeNode]
 
 	def __init__(self):
 		self.root = None
-		self.scan_nodes = {}
-
+		self.scan_nodes = []
+		self.join_nodes = []
 
 	@staticmethod
 	def from_query(query: str, cursor: psycopg.Cursor):
@@ -98,7 +99,13 @@ class QueryPlanTree:
 		if "Relation Name" in plan and "Alias" in plan:
 			involving_relations.add(Relation(plan["Relation Name"], plan["Alias"]))
 
-		return QueryPlanTreeNode(info, left, right, involving_relations)
+		node = QueryPlanTreeNode(info, left, right, involving_relations)
+		if plan["Node Type"] in SCAN_TYPES:
+			self.scan_nodes.append(node)
+		elif plan["Node Type"] in JOIN_TYPES:
+			self.join_nodes.append(node)
+
+		return node
 	
 	def get_visualization(self):
 		return QueryPlanTree._get_visualization_helper(self.root, 0) 
