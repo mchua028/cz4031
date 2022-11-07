@@ -1,7 +1,7 @@
 import tkinter as tk
-import typing
 from abc import ABC, abstractmethod
-from tkinter import ttk
+from tkinter import ttk, messagebox
+from typing import Optional
 
 import psycopg
 
@@ -17,20 +17,17 @@ class App(tk.Tk):
 
         self.ctx = Context(cursor)
 
-        self.topLabel = tk.Label(self, text="Enter SQL query below").grid(column=0, row=0)
+        self.input_query_frame = InputQueryFrame(self, self.ctx)
+        self.input_query_frame.grid(column=0, row=0)
+        self.ctx.frames["input_query"] = self.input_query_frame
 
         self.annotated_query_frame = AnnotatedQueryFrame(self, self.ctx)
-        self.annotated_query_frame.grid(column=0, row=2)
+        self.annotated_query_frame.grid(column=1, row=0)
         self.ctx.frames["annotated_query"] = self.annotated_query_frame
 
         self.visualize_query_plan_frame = VisualizeQueryPlanFrame(self, self.ctx)
-        self.visualize_query_plan_frame.grid(column=1, row=1, rowspan=2)
+        self.visualize_query_plan_frame.grid(column=2, row=0)
         self.ctx.frames["visualize_query_plan"] = self.visualize_query_plan_frame
-
-        self.input_query_frame = InputQueryFrame(self, self.ctx)
-        self.input_query_frame.grid(column=0, row=1)
-        self.ctx.frames["input_query"] = self.input_query_frame
-
 
 class Updatable(ABC):
     @abstractmethod
@@ -38,12 +35,12 @@ class Updatable(ABC):
         pass
 
 class Context:
-    vars: typing.Dict[str, tk.Variable]
-    frames: typing.Dict[str, Updatable]
+    vars: dict[str, tk.Variable]
+    frames: dict[str, Updatable]
 
     def __init__(self, cursor: psycopg.Cursor) -> None:
         self.vars = {
-            "input_query": tk.StringVar()
+            "input_query": tk.StringVar(),
         }
         self.frames = {}
         self.cursor = cursor
@@ -53,50 +50,60 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         super().__init__(master)
         self.ctx = ctx
 
-        self.annotated_query = ttk.Label(self, text="Annotation")
-        self.annotated_query.grid(column=0,row=0)
+        self.top_label = tk.Label(self, text="Annotation")
+        self.top_label.grid(row=0)
+        self.annotated_query_label = ttk.Label(self)
+        self.annotated_query_label.grid(column=0, row=1)
 
     def update_changes(self, *args, **kwargs):
-        pass
+        if kwargs["qptree"] is None:
+            self.annotated_query_label["text"] = ""
+        else:
+            self.annotated_query_label["text"] = kwargs["qptree"].get_annotation()
 
 class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
         super().__init__(master)
         self.ctx = ctx
 
-        self.visualize_query_plan = ttk.Label(self, text="Visualization")
-        self.visualize_query_plan.grid()
+        self.top_label = tk.Label(self, text="Visualization")
+        self.top_label.grid(row=0)
+        self.visualize_query_plan_label = ttk.Label(self)
+        self.visualize_query_plan_label.grid(row=1)
     
     def update_changes(self, *args, **kwargs):
-        input_query = self.ctx.vars["input_query"].get()
-
-        try:
-            qptree = QueryPlanTree.from_query(input_query, self.ctx.cursor)
-            self.visualize_query_plan["text"] = str(qptree)
-            self.ctx.cursor.connection.commit()
-        except psycopg.errors.Error as err:
-            self.visualize_query_plan["text"] = err.diag.message_primary
-            self.ctx.cursor.connection.rollback()
-
+        if kwargs["qptree"] is None:
+            self.visualize_query_plan_label["text"] = ""
+        else:
+            self.visualize_query_plan_label["text"] = kwargs["qptree"].get_visualization()
 
 class InputQueryFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
         super().__init__(master)
 
-        self.input_query = tk.Text(self, height=10, width=50)
-        self.input_query.grid(row=0)
+        self.top_label = tk.Label(self, text="Enter SQL query below")
+        self.top_label.grid(row=0)
+        self.input_query_text = tk.Text(self, height=10, width=50)
+        self.input_query_text.grid(row=1)
 
         self.analyze_query_button = ttk.Button(self, text="Analyze Query", command=self.analyze_query, padding=10)
-        self.analyze_query_button.grid(row=1)
+        self.analyze_query_button.grid(row=2)
 
         self.ctx = ctx
     
     def analyze_query(self):
-        self.ctx.vars["input_query"].set(
-            self.input_query.get("1.0", "end-1c")
-        )
-        self.ctx.frames["annotated_query"].update_changes()
-        self.ctx.frames["visualize_query_plan"].update_changes()
+        input_query = self.input_query_text.get("1.0", "end-1c")
+        self.ctx.vars["input_query"].set(input_query)
+
+        qptree: Optional[QueryPlanTree] = None
+        try:
+            qptree = QueryPlanTree.from_query(input_query, self.ctx.cursor)
+        except Exception as err:
+            messagebox.showerror("Error", err)
+        
+        self.ctx.cursor.connection.rollback()
+        self.ctx.frames["visualize_query_plan"].update_changes(qptree=qptree)
+        self.ctx.frames["annotated_query"].update_changes(qptree=qptree)
 
     def update_changes(self, *args, **kwargs):
         pass
