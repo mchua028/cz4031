@@ -43,7 +43,6 @@ class QueryPlanTree:
 	def __init__(self):
 		self.root = None
 		self.scan_nodes = {}
-		self.join_nodes = {}
 
 	# get the query plan from the query
 	@staticmethod
@@ -84,26 +83,26 @@ class QueryPlanTree:
 
 		return QueryPlanTreeNode(info, left, right, involving_relations)
 	
-	# def __str__(self):
-	# 	return QueryPlanTree._str_helper(self.root, 0) 
+	def __str__(self):
+		return QueryPlanTree._str_helper(self.root, 0) 
 
-	# @staticmethod
-	# def _str_helper(node: Optional[QueryPlanTreeNode], level: int):
-	# 	if node is None:
-	# 		return ""
+	@staticmethod
+	def _str_helper(node: Optional[QueryPlanTreeNode], level: int):
+		if node is None:
+			return ""
 		
-	# 	left = QueryPlanTree._str_helper(node.left, level + 1)
-	# 	if left != "":
-	# 		left = "\n" + left
+		left = QueryPlanTree._str_helper(node.left, level + 1)
+		if left != "":
+			left = "\n" + left
 
-	# 	right = QueryPlanTree._str_helper(node.right, level + 1)
-	# 	if right != "":
-	# 		right = "\n" + right 
+		right = QueryPlanTree._str_helper(node.right, level + 1)
+		if right != "":
+			right = "\n" + right 
 
-	# 	node_type: str = node.info["Node Type"]
-	# 	del node.info["Node Type"]
+		node_type: str = node.info["Node Type"]
+		del node.info["Node Type"]
 
-	# 	return f"{'    ' * level}-> {node_type} {node.get_primary_info()}{left}{right}"
+		return f"{'    ' * level}-> {node_type} {node.get_primary_info()}{left}{right}"
 
 def query_plan(query: str, cursor: psycopg.Cursor) -> dict:
 	cursor.execute(f"EXPLAIN (FORMAT JSON) {query}")
@@ -141,7 +140,7 @@ def traverse_aqp(node: Optional[QueryPlanTreeNode], join_nodes_dict: dict):
 	relation_list = []
 	for inv_relation in node.involving_relations:
 		relation_list.append(f"{inv_relation.relation_name} {inv_relation.alias}")
-		
+
 	if node_info['Node Type'] in join_types_set:
 		relation_key = ' '.join(relation_list)
 		node_cost = node_info['Total Cost'] - node_info['Startup Cost']
