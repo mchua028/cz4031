@@ -84,26 +84,26 @@ class QueryPlanTree:
 
 		return QueryPlanTreeNode(info, left, right, involving_relations)
 	
-	def __str__(self):
-		return QueryPlanTree._str_helper(self.root, 0) 
+	# def __str__(self):
+	# 	return QueryPlanTree._str_helper(self.root, 0) 
 
-	@staticmethod
-	def _str_helper(node: Optional[QueryPlanTreeNode], level: int):
-		if node is None:
-			return ""
+	# @staticmethod
+	# def _str_helper(node: Optional[QueryPlanTreeNode], level: int):
+	# 	if node is None:
+	# 		return ""
 		
-		left = QueryPlanTree._str_helper(node.left, level + 1)
-		if left != "":
-			left = "\n" + left
+	# 	left = QueryPlanTree._str_helper(node.left, level + 1)
+	# 	if left != "":
+	# 		left = "\n" + left
 
-		right = QueryPlanTree._str_helper(node.right, level + 1)
-		if right != "":
-			right = "\n" + right 
+	# 	right = QueryPlanTree._str_helper(node.right, level + 1)
+	# 	if right != "":
+	# 		right = "\n" + right 
 
-		node_type: str = node.info["Node Type"]
-		del node.info["Node Type"]
+	# 	node_type: str = node.info["Node Type"]
+	# 	del node.info["Node Type"]
 
-		return f"{'    ' * level}-> {node_type} {node.get_primary_info()}{left}{right}"
+	# 	return f"{'    ' * level}-> {node_type} {node.get_primary_info()}{left}{right}"
 
 def query_plan(query: str, cursor: psycopg.Cursor) -> dict:
 	cursor.execute(f"EXPLAIN (FORMAT JSON) {query}")
@@ -138,9 +138,23 @@ def traverse_aqp(node: Optional[QueryPlanTreeNode], join_nodes_dict: dict):
 	traverse_aqp(node.left, join_nodes_dict)
 	traverse_aqp(node.right, join_nodes_dict)
 	
+	join_types_list = ["Nested Loop", "Merge Join", "Hash Join"]
 	node_info = node.info
+	print(node.info)
+
+	count = 0
+	relation_list = []
 	for inv_relation in node.involving_relations:
-		print(inv_relation.relation_name)
+		relation_list.append(f"{inv_relation.relation_name} {inv_relation.alias}")
+		count += 1
+	if node_info['Node Type'] in join_types_list:
+		relation_key = ' '.join(relation_list)
+		node_cost = node_info['Total Cost'] - node_info['Startup Cost']
+		join_type = node_info['Node Type']
+		if relation_key in join_nodes_dict:
+			join_nodes_dict[relation_key][join_type] = node_cost
+		else:
+			join_nodes_dict[relation_key] = {join_type: node_cost}
 	print("\n")
 
 def handle_join_nodes(aqp_list: list[QueryPlanTree]) -> dict[str: dict]:
@@ -150,3 +164,8 @@ def handle_join_nodes(aqp_list: list[QueryPlanTree]) -> dict[str: dict]:
 		print(aqp)
 		print("\nTraversing the aqp\n")
 		traverse_aqp(aqp.root, join_nodes_dict)
+	print("\n###\n")
+	for k, v in join_nodes_dict.items():
+		print(k, ' : ', v, '\n')
+	# print(join_nodes_dict)
+	print("###")
