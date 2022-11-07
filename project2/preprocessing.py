@@ -121,7 +121,6 @@ def alternative_query_plans(query: str, cursor: psycopg.Cursor):
 		cursor.connection.rollback()
 
 def alternative_query_plan_trees(query: str, cursor: psycopg.Cursor):
-	print(query)
 	for plan in alternative_query_plans(query, cursor):
 		yield QueryPlanTree.from_plan(plan)
 
