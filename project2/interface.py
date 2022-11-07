@@ -57,14 +57,13 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         self.annotated_query = ttk.Label(self, text="Annotation")
         self.annotated_query.grid(column=0,row=0)
 
-        self.step_by_step = ttk.Label(self, text="")
-        self.step_by_step.grid(column=0,row=2)
+        #self.step_by_step = ttk.Label(self, text="")
+        #self.step_by_step.grid(column=0,row=2)
 
     def update_changes(self, *args, **kwargs):
         input_query = self.ctx.vars["input_query"].get()
         temp, temp2, temp3 = QueryPlanTree.get_annotation(input_query, self.ctx.cursor)
-        self.ctx.vars["annotated_query"].set(temp)
-        self.step_by_step["text"] = self.ctx.vars["annotated_query"].get()
+        self.annotated_query["text"] = temp
 
 class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
