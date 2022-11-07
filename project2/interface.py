@@ -28,8 +28,6 @@ class App(tk.Tk):
         self.visualize_query_plan_frame.grid(column=2, row=0)
         self.ctx.frames["visualize_query_plan"] = self.visualize_query_plan_frame
 
-
-
 class Updatable(ABC):
     @abstractmethod
     def update_changes(self, *args, **kwargs):
@@ -51,8 +49,10 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         super().__init__(master)
         self.ctx = ctx
 
-        self.annotated_query_label = ttk.Label(self, text="Annotation")
-        self.annotated_query_label.grid(column=0,row=0)
+        self.top_label = tk.Label(self, text="Annotation")
+        self.top_label.grid(row=0)
+        self.annotated_query_label = ttk.Label(self)
+        self.annotated_query_label.grid(column=0, row=1)
 
     def update_changes(self, *args, **kwargs):
         self.annotated_query_label["text"] = kwargs["qptree"].get_annotation()
@@ -62,8 +62,10 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
         super().__init__(master)
         self.ctx = ctx
 
-        self.visualize_query_plan_label = ttk.Label(self, text="Visualization")
-        self.visualize_query_plan_label.grid()
+        self.top_label = tk.Label(self, text="Visualization")
+        self.top_label.grid(row=0)
+        self.visualize_query_plan_label = ttk.Label(self)
+        self.visualize_query_plan_label.grid(row=1)
     
     def update_changes(self, *args, **kwargs):
         self.visualize_query_plan_label["text"] = kwargs["qptree"].get_visualization()
