@@ -44,6 +44,7 @@ class QueryPlanTree:
 		self.root = None
 		self.scan_nodes = {}
 
+
 	@staticmethod
 	def from_query(query: str, cursor: psycopg.Cursor):
 		plan = query_plan(query, cursor)
@@ -54,6 +55,19 @@ class QueryPlanTree:
 		qptree = QueryPlanTree()
 		qptree.root = qptree._build(plan)
 		return qptree
+
+	def get_annotation(self):
+		return QueryPlanTree._get_annotation_helper(self.root, 1)[0]
+
+	@staticmethod
+	def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int):
+		if node is None:
+			return "", step
+		
+		left, step = QueryPlanTree._get_annotation_helper(node.left, step)
+		right, step = QueryPlanTree._get_annotation_helper(node.right, step)
+
+		return f"{left}{right}\n{step}. Perform {node.info['Node Type']}", step + 1
 	
 	def _build(self, plan: dict):	
 		# Post-order traversal
@@ -80,26 +94,23 @@ class QueryPlanTree:
 
 		return QueryPlanTreeNode(info, left, right, involving_relations)
 	
-	def __str__(self):
-		return QueryPlanTree._str_helper(self.root, 0) 
+	def get_visualization(self):
+		return QueryPlanTree._get_visualization_helper(self.root, 0) 
 
 	@staticmethod
-	def _str_helper(node: Optional[QueryPlanTreeNode], level: int):
+	def _get_visualization_helper(node: Optional[QueryPlanTreeNode], level: int):
 		if node is None:
 			return ""
 		
-		left = QueryPlanTree._str_helper(node.left, level + 1)
+		left = QueryPlanTree._get_visualization_helper(node.left, level + 1)
 		if left != "":
 			left = "\n" + left
 
-		right = QueryPlanTree._str_helper(node.right, level + 1)
+		right = QueryPlanTree._get_visualization_helper(node.right, level + 1)
 		if right != "":
 			right = "\n" + right 
 
-		node_type: str = node.info["Node Type"]
-		del node.info["Node Type"]
-
-		return f"{'    ' * level}-> {node_type} {node.get_primary_info()}{left}{right}"
+		return f"{'    ' * level}-> {node.get_primary_info()}{left}{right}"
 
 def query_plan(query: str, cursor: psycopg.Cursor) -> dict:
 	cursor.execute(f"EXPLAIN (FORMAT JSON) {query}")
