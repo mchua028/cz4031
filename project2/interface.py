@@ -1,5 +1,4 @@
 import tkinter as tk
-import typing
 from abc import ABC, abstractmethod
 from tkinter import ttk
 
@@ -38,8 +37,8 @@ class Updatable(ABC):
         pass
 
 class Context:
-    vars: typing.Dict[str, tk.Variable]
-    frames: typing.Dict[str, Updatable]
+    vars: dict[str, tk.Variable]
+    frames: dict[str, Updatable]
 
     def __init__(self, cursor: psycopg.Cursor) -> None:
         self.vars = {
