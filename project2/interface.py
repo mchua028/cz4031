@@ -5,7 +5,7 @@ from tkinter import ttk
 
 import psycopg
 
-from preprocessing import QueryPlanTree
+from preprocessing import QueryPlanTree,alternative_query_plan_trees,collect_scans
 
 
 class App(tk.Tk):
@@ -77,6 +77,9 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
         except psycopg.errors.Error as err:
             self.visualize_query_plan["text"] = err.diag.message_primary
             self.ctx.cursor.connection.rollback()
+        #testing collect_scans
+        trees=alternative_query_plan_trees(input_query,self.ctx.cursor)
+        collect_scans(trees)
 
 
 class InputQueryFrame(ttk.Frame, Updatable):

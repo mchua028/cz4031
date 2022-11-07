@@ -33,9 +33,20 @@ class QueryPlanTreeNode:
 				or k == "Alias" or k == "Group Key" or k == "Strategy" \
 				or ("Filter" in k and "Removed by" not in k) or "Cond" in k:
 				primary_info[k] = v
-		
+		# print("primary info:",primary_info)
 		return primary_info
-				
+
+	def get_all_nodes_info(self):
+		nodes_info=[]
+		if self is None:
+			return nodes_info
+		nodes_info.append(self.info)
+		if (self.right is not None):
+			nodes_info=nodes_info+self.right.get_all_nodes_info()
+		if (self.left is not None):
+			nodes_info=nodes_info+self.left.get_all_nodes_info()
+		return nodes_info
+
 class QueryPlanTree:
 	root: Optional[QueryPlanTreeNode]
 	scan_nodes: dict[str, QueryPlanTreeNode]
@@ -44,11 +55,12 @@ class QueryPlanTree:
 		self.root = None
 		self.scan_nodes = {}
 
+	#build query plan tree from query
 	@staticmethod
 	def from_query(query: str, cursor: psycopg.Cursor):
 		plan = query_plan(query, cursor)
 		return QueryPlanTree.from_plan(plan)
-
+	#build query plan tree from plan
 	@staticmethod
 	def from_plan(plan: dict):
 		qptree = QueryPlanTree()
@@ -75,11 +87,22 @@ class QueryPlanTree:
 				involving_relations.update(right.involving_relations)
 		
 		info = {k: v for k, v in plan.items() if k != "Plans"}
+		# print("node info:",info)
 		if "Relation Name" in plan and "Alias" in plan:
 			involving_relations.add(Relation(plan["Relation Name"], plan["Alias"]))
 
 		return QueryPlanTreeNode(info, left, right, involving_relations)
 	
+	# def get_nodes_info(self):
+	# 	nodes_info=[]
+	# 	nodes_info.append(self.root.info)
+	# 	if (self.root.right is not None):
+	# 		nodes_info.append(get_nodes_info(self.root.right))
+	# 	if (self.root.left is not None):
+	# 		nodes_info.append(get_nodes_info(self.root.left))
+	# 	return nodes_info
+	 
+
 	def __str__(self):
 		return QueryPlanTree._str_helper(self.root, 0) 
 
@@ -101,10 +124,14 @@ class QueryPlanTree:
 
 		return f"{'    ' * level}-> {node_type} {node.get_primary_info()}{left}{right}"
 
+#execute query and fetch qep
 def query_plan(query: str, cursor: psycopg.Cursor) -> dict:
 	cursor.execute(f"EXPLAIN (FORMAT JSON) {query}")
-	return cursor.fetchone()[0][0]["Plan"]
+	plan=cursor.fetchone()[0][0]["Plan"]
+	# print(plan)
+	return plan
 
+#get aqps
 def alternative_query_plans(query: str, cursor: psycopg.Cursor):
 	scan_types = ["bitmapscan", "indexscan", "indexonlyscan", "seqscan", "tidscan"]
 	join_types = ["hashjoin", "mergejoin", "nestloop"]
@@ -119,7 +146,20 @@ def alternative_query_plans(query: str, cursor: psycopg.Cursor):
 
 		yield query_plan(query, cursor)
 		cursor.connection.rollback()
-
+#create queryplantree for each aqp
 def alternative_query_plan_trees(query: str, cursor: psycopg.Cursor):
 	for plan in alternative_query_plans(query, cursor):
 		yield QueryPlanTree.from_plan(plan)
+
+def collect_scans(trees:list[QueryPlanTree])->dict[str,dict[str,float]]:
+	scans={}
+	
+	for tree in trees:
+		nodes_info=tree.root.get_all_nodes_info()
+		for node in nodes_info:
+			if "Scan" in node["Node Type"] and node["Node Type"]!="Bitmap Index Scan":
+				if node["Relation Name"]+" "+node["Alias"] not in scans:
+					scans[node["Relation Name"]+" "+node["Alias"]]={}
+				scans[node["Relation Name"]+" "+node["Alias"]][node["Node Type"]]=node["Total Cost"]-node["Startup Cost"]
+	print("scans:",scans)
+	return scans
