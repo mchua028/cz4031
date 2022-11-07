@@ -33,7 +33,6 @@ class QueryPlanTreeNode:
 				or k == "Alias" or k == "Group Key" or k == "Strategy" \
 				or ("Filter" in k and "Removed by" not in k) or "Cond" in k:
 				primary_info[k] = v
-		# print("primary info:",primary_info)
 		return primary_info
 
 	def get_all_nodes_info(self):
@@ -41,9 +40,9 @@ class QueryPlanTreeNode:
 		if self is None:
 			return nodes_info
 		nodes_info.append(self.info)
-		if (self.right is not None):
+		if self.right is not None:
 			nodes_info=nodes_info+self.right.get_all_nodes_info()
-		if (self.left is not None):
+		if self.left is not None:
 			nodes_info=nodes_info+self.left.get_all_nodes_info()
 		return nodes_info
 
@@ -59,7 +58,7 @@ class QueryPlanTree:
 	def from_query(query: str, cursor: psycopg.Cursor):
 		plan = query_plan(query, cursor)
 		return QueryPlanTree.from_plan(plan)
-	#build query plan tree from plan
+
 	@staticmethod
 	def from_plan(plan: dict):
 		qptree = QueryPlanTree()
@@ -99,7 +98,6 @@ class QueryPlanTree:
 				involving_relations.update(right.involving_relations)
 		
 		info = {k: v for k, v in plan.items() if k != "Plans"}
-		# print("node info:",info)
 		if "Relation Name" in plan and "Alias" in plan:
 			involving_relations.add(Relation(plan["Relation Name"], plan["Alias"]))
 
@@ -126,9 +124,7 @@ class QueryPlanTree:
 #execute query and fetch qep
 def query_plan(query: str, cursor: psycopg.Cursor) -> dict:
 	cursor.execute(f"EXPLAIN (FORMAT JSON) {query}")
-	plan=cursor.fetchone()[0][0]["Plan"]
-	# print(plan)
-	return plan
+	return cursor.fetchone()[0][0]["Plan"]
 
 #get aqps
 def alternative_query_plans(query: str, cursor: psycopg.Cursor):
@@ -145,7 +141,7 @@ def alternative_query_plans(query: str, cursor: psycopg.Cursor):
 
 		yield query_plan(query, cursor)
 		cursor.connection.rollback()
-#create queryplantree for each aqp
+
 def alternative_query_plan_trees(query: str, cursor: psycopg.Cursor):
 	for plan in alternative_query_plans(query, cursor):
 		yield QueryPlanTree.from_plan(plan)
@@ -156,9 +152,8 @@ def collect_scans(trees:list[QueryPlanTree])->dict[str,dict[str,float]]:
 	for tree in trees:
 		nodes_info=tree.root.get_all_nodes_info()
 		for node in nodes_info:
-			if "Scan" in node["Node Type"] and node["Node Type"]!="Bitmap Index Scan":
+			if "Scan" in node["Node Type"] and node["Node Type"] != "Bitmap Index Scan":
 				if node["Relation Name"]+" "+node["Alias"] not in scans:
 					scans[node["Relation Name"]+" "+node["Alias"]]={}
 				scans[node["Relation Name"]+" "+node["Alias"]][node["Node Type"]]=node["Total Cost"]-node["Startup Cost"]
-	print("scans:",scans)
 	return scans
