@@ -43,7 +43,6 @@ class Context:
     def __init__(self, cursor: psycopg.Cursor) -> None:
         self.vars = {
             "input_query": tk.StringVar(),
-            "annotated_query" : tk.StringVar()
         }
         self.frames = {}
         self.cursor = cursor
@@ -56,13 +55,8 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         self.annotated_query = ttk.Label(self, text="Annotation")
         self.annotated_query.grid(column=0,row=0)
 
-        #self.step_by_step = ttk.Label(self, text="")
-        #self.step_by_step.grid(column=0,row=2)
-
     def update_changes(self, *args, **kwargs):
-        input_query = self.ctx.vars["input_query"].get()
-        qptree = QueryPlanTree.from_query(input_query, self.ctx.cursor)
-        self.annotated_query["text"] = qptree.get_annotation()
+        self.annotated_query["text"] = kwargs["qptree"].get_annotation()
 
 class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
@@ -73,17 +67,7 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
         self.visualize_query_plan.grid()
     
     def update_changes(self, *args, **kwargs):
-        input_query = self.ctx.vars["input_query"].get()
-
-        try:
-            qptree = QueryPlanTree.from_query(input_query, self.ctx.cursor)
-            self.visualize_query_plan["text"] = str(qptree)
-            self.ctx.cursor.connection.commit()
-        
-        except psycopg.errors.Error as err:
-            self.visualize_query_plan["text"] = err.diag.message_primary
-            self.ctx.cursor.connection.rollback()
-
+        self.visualize_query_plan["text"] = kwargs["qptree"].get_visualization()
 
 class InputQueryFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
@@ -98,11 +82,12 @@ class InputQueryFrame(ttk.Frame, Updatable):
         self.ctx = ctx
     
     def analyze_query(self):
-        self.ctx.vars["input_query"].set(
-            self.input_query.get("1.0", "end-1c")
-        )
-        self.ctx.frames["visualize_query_plan"].update_changes()
-        self.ctx.frames["annotated_query"].update_changes()
+        input_query = self.input_query.get("1.0", "end-1c")
+        self.ctx.vars["input_query"].set(input_query)
+
+        qptree = QueryPlanTree.from_query(input_query, self.ctx.cursor)
+        self.ctx.frames["visualize_query_plan"].update_changes(qptree=qptree)
+        self.ctx.frames["annotated_query"].update_changes(qptree=qptree)
 
     def update_changes(self, *args, **kwargs):
         pass
