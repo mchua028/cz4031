@@ -44,14 +44,11 @@ class QueryPlanTree:
 		self.root = None
 		self.scan_nodes = {}
 
-	# get the query plan from the query
 	@staticmethod
 	def from_query(query: str, cursor: psycopg.Cursor):
 		plan = query_plan(query, cursor)
-		# returns a QueryPlanTree
 		return QueryPlanTree.from_plan(plan)
 
-	# Builds the QueryPlanTree
 	@staticmethod
 	def from_plan(plan: dict):
 		qptree = QueryPlanTree()
