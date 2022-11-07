@@ -41,21 +41,26 @@ class QueryPlanTree:
 		qptree.root = qptree._build(plan)
 		return qptree
 
-	@staticmethod
-	def get_annotation(query: str, cursor: psycopg.Cursor):
-		plan = query_plan(query, cursor)
+	#@staticmethod
+	#def get_annotation(query: str, cursor: psycopg.Cursor):
+	#	plan = query_plan(query, cursor)
+	#	relation_stack = []
+	#	tree = QueryPlanTree.from_plan(plan)
+	#	return tree.gen_annotation(relation_stack, tree.root, 1)
+
+	def get_annotation(self):
 		relation_stack = []
-		tree = QueryPlanTree.from_plan(plan)
-		return tree.gen_annotation(relation_stack, tree.root, 1)
+		temp, temp2, temp3 = self._get_annotation_helper(relation_stack, self.root, 1)
+		return temp
 
 	@staticmethod
-	def gen_annotation(relations: list[str], node: Optional[QueryPlanTreeNode], step:int):
+	def _get_annotation_helper(relations: list[str], node: Optional[QueryPlanTreeNode], step:int):
 		if node is None:
 			return ("", step, relations)
 		
-		left, step, relations = QueryPlanTree.gen_annotation(relations, node.left, step)
+		left, step, relations = QueryPlanTree._get_annotation_helper(relations, node.left, step)
 
-		right, step, relations = QueryPlanTree.gen_annotation(relations, node.right, step)
+		right, step, relations = QueryPlanTree._get_annotation_helper(relations, node.right, step)
 		
 		if("Join Type" in node.info.keys() or "Relation Name" in node.info.keys()):
 			if("Relation Name" in node.info.keys()):
