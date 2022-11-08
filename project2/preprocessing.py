@@ -13,13 +13,13 @@ class Relation:
 	def __init__(self, relation_name: str, alias: str):
 		self.relation_name = relation_name
 		self.alias = alias
-	
+
 	"""
 	When with_duplicate_alias = True, alias is included only if alias != relation name
 	"""
 	def __str__(self, with_duplicate_alias=False) -> str:
 		if not with_duplicate_alias and self.relation_name == self.alias:
-			return self.relation_name	
+			return self.relation_name
 		else:
 			return f"{self.relation_name} {self.alias}"
 
@@ -52,6 +52,9 @@ class QueryPlanTreeNode:
 			nodes_info=nodes_info+self.left.get_all_nodes_info()
 		return nodes_info
 
+	def get_cost(self) -> float:
+		return self.info["Total Cost"] - self.info["Startup Cost"]
+
 class QueryPlanTree:
 	root: Optional[QueryPlanTreeNode]
 	scan_nodes: list[QueryPlanTreeNode]
@@ -80,13 +83,13 @@ class QueryPlanTree:
 	def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int):
 		if node is None:
 			return "", step
-		
+
 		left, step = QueryPlanTree._get_annotation_helper(node.left, step)
 		right, step = QueryPlanTree._get_annotation_helper(node.right, step)
 
 		return f"{left}{right}\n{step}. Perform {node.info['Node Type']}", step + 1
-	
-	def _build(self, plan: dict):	
+
+	def _build(self, plan: dict):
 		# Post-order traversal
 		if "Node Type" not in plan:
 			return None
@@ -104,7 +107,7 @@ class QueryPlanTree:
 			if len(subplans) >= 2:
 				right = self._build(subplans[1])
 				involving_relations.update(right.involving_relations)
-		
+
 		info = {k: v for k, v in plan.items() if k != "Plans"}
 		if "Relation Name" in plan and "Alias" in plan:
 			involving_relations.add(Relation(plan["Relation Name"], plan["Alias"]))
@@ -116,22 +119,22 @@ class QueryPlanTree:
 			self.join_nodes.append(node)
 
 		return node
-	
+
 	def get_visualization(self):
-		return QueryPlanTree._get_visualization_helper(self.root, 0) 
+		return QueryPlanTree._get_visualization_helper(self.root, 0)
 
 	@staticmethod
 	def _get_visualization_helper(node: Optional[QueryPlanTreeNode], level: int):
 		if node is None:
 			return ""
-		
+
 		left = QueryPlanTree._get_visualization_helper(node.left, level + 1)
 		if left != "":
 			left = "\n" + left
 
 		right = QueryPlanTree._get_visualization_helper(node.right, level + 1)
 		if right != "":
-			right = "\n" + right 
+			right = "\n" + right
 
 		return f"{'    ' * level}-> {node.get_primary_info()}{left}{right}"
 
@@ -159,7 +162,7 @@ def alternative_query_plan_trees(query: str, cursor: psycopg.Cursor):
 
 def collect_scans(trees:list[QueryPlanTree])->dict[str,dict[str,float]]:
 	scans={}
-	
+
 	for tree in trees:
 		nodes_info=tree.root.get_all_nodes_info()
 		for node in nodes_info:
@@ -168,3 +171,20 @@ def collect_scans(trees:list[QueryPlanTree])->dict[str,dict[str,float]]:
 					scans[node["Relation Name"]+" "+node["Alias"]]={}
 				scans[node["Relation Name"]+" "+node["Alias"]][node["Node Type"]]=node["Total Cost"]-node["Startup Cost"]
 	return scans
+
+def collect_joins_from_aqp_trees(aqp_trees: list[QueryPlanTree]) -> dict[str, dict[str, float]]:
+	result = {}
+	for tree in aqp_trees:
+		for node in tree.join_nodes:
+			relations_key = " ".join(
+				# Sorting is required as the relations may not be in order
+				sorted(map(lambda rel: str(rel), node.involving_relations))
+			)
+			if relations_key not in result:
+				result[relations_key] = {}
+
+			node_type = node.info["Node Type"]
+			cost = node.get_cost()
+			if node_type not in result[relations_key] or cost < result[relations_key][node_type] :
+				result[relations_key][node_type] = cost
+	return result
