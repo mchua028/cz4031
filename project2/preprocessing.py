@@ -145,30 +145,25 @@ def alternative_query_plan_trees(query: str, cursor: psycopg.Cursor):
 	for plan in alternative_query_plans(query, cursor):
 		yield QueryPlanTree.from_plan(plan)
 
-def traverse_aqp(node: Optional[QueryPlanTreeNode], join_nodes_dict: dict):
-	if node is None:
-		return ""
-	traverse_aqp(node.left, join_nodes_dict)
-	traverse_aqp(node.right, join_nodes_dict)
+def retrieve_join_info(aqp_node_list: list[QueryPlanTreeNode], join_nodes_dict: dict):
 	
-	join_types_set = {"Nested Loop", "Merge Join", "Hash Join"}
-	relation_key = ""
+	for node in aqp_node_list:
+		join_types_set = {"Nested Loop", "Merge Join", "Hash Join"}
+		relation_key = ""
 
-	for inv_relation in node.involving_relations:
-		relation_key = f"{relation_key} {str(inv_relation)}" if relation_key != "" else str(inv_relation)
-	
-	if node.info['Node Type'] in join_types_set:
-		node_cost = node.info['Total Cost'] - node.info['Startup Cost']
-		join_type = node.info['Node Type']
-		if relation_key in join_nodes_dict:
-			join_nodes_dict[relation_key][join_type] = node_cost
-		else:
-			join_nodes_dict[relation_key] = {join_type: node_cost}
+		for inv_relation in node.involving_relations:
+			relation_key = f"{relation_key} {str(inv_relation)}" if relation_key != "" else str(inv_relation)
+		
+		if node.info['Node Type'] in join_types_set:
+			node_cost = node.info['Total Cost'] - node.info['Startup Cost']
+			join_type = node.info['Node Type']
+			if relation_key in join_nodes_dict:
+				join_nodes_dict[relation_key][join_type] = node_cost
+			else:
+				join_nodes_dict[relation_key] = {join_type: node_cost}
 
 def handle_join_nodes(aqp_list: list[QueryPlanTree]) -> dict[str: dict]:
 	join_nodes_dict = dict()
 	for aqp in aqp_list: 
-		traverse_aqp(aqp.root, join_nodes_dict)
-	for k, v in join_nodes_dict.items():
-		print(k, v)
+		retrieve_join_info(aqp.join_nodes, join_nodes_dict)
 	return join_nodes_dict
