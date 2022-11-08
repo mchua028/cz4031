@@ -3,6 +3,12 @@ import psycopg
 
 from itertools import combinations, product
 
+SCAN_TYPES = {"Bitmap Heap Scan", "Bitmap Index Scan", "Index Scan", "Index Only Scan", "Seq Scan", "Tid Scan"}
+SCAN_TYPE_FLAGS = {"bitmapscan", "indexscan", "indexonlyscan", "seqscan", "tidscan"}
+
+JOIN_TYPES = {"Hash Join", "Merge Join", "Nested Loop"}
+JOIN_TYPE_FLAGS ={"hashjoin", "mergejoin", "nestloop"}
+
 class Relation:
 	def __init__(self, relation_name: str, alias: str):
 		self.relation_name = relation_name
@@ -38,11 +44,13 @@ class QueryPlanTreeNode:
 				
 class QueryPlanTree:
 	root: Optional[QueryPlanTreeNode]
-	scan_nodes: dict[str, QueryPlanTreeNode]
+	scan_nodes: list[QueryPlanTreeNode]
+	join_nodes: list[QueryPlanTreeNode]
 
 	def __init__(self):
 		self.root = None
-		self.scan_nodes = {}
+		self.scan_nodes = []
+		self.join_nodes = []
 
 	@staticmethod
 	def from_query(query: str, cursor: psycopg.Cursor):
@@ -54,6 +62,19 @@ class QueryPlanTree:
 		qptree = QueryPlanTree()
 		qptree.root = qptree._build(plan)
 		return qptree
+
+	def get_annotation(self):
+		return QueryPlanTree._get_annotation_helper(self.root, 1)[0]
+
+	@staticmethod
+	def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int):
+		if node is None:
+			return "", step
+		
+		left, step = QueryPlanTree._get_annotation_helper(node.left, step)
+		right, step = QueryPlanTree._get_annotation_helper(node.right, step)
+
+		return f"{left}{right}\n{step}. Perform {node.info['Node Type']}", step + 1
 	
 	def _build(self, plan: dict):	
 		# Post-order traversal
@@ -78,40 +99,40 @@ class QueryPlanTree:
 		if "Relation Name" in plan and "Alias" in plan:
 			involving_relations.add(Relation(plan["Relation Name"], plan["Alias"]))
 
-		return QueryPlanTreeNode(info, left, right, involving_relations)
+		node = QueryPlanTreeNode(info, left, right, involving_relations)
+		if plan["Node Type"] in SCAN_TYPES:
+			self.scan_nodes.append(node)
+		elif plan["Node Type"] in JOIN_TYPES:
+			self.join_nodes.append(node)
+
+		return node
 	
-	def __str__(self):
-		return QueryPlanTree._str_helper(self.root, 0) 
+	def get_visualization(self):
+		return QueryPlanTree._get_visualization_helper(self.root, 0) 
 
 	@staticmethod
-	def _str_helper(node: Optional[QueryPlanTreeNode], level: int):
+	def _get_visualization_helper(node: Optional[QueryPlanTreeNode], level: int):
 		if node is None:
 			return ""
 		
-		left = QueryPlanTree._str_helper(node.left, level + 1)
+		left = QueryPlanTree._get_visualization_helper(node.left, level + 1)
 		if left != "":
 			left = "\n" + left
 
-		right = QueryPlanTree._str_helper(node.right, level + 1)
+		right = QueryPlanTree._get_visualization_helper(node.right, level + 1)
 		if right != "":
 			right = "\n" + right 
 
-		node_type: str = node.info["Node Type"]
-		del node.info["Node Type"]
-
-		return f"{'    ' * level}-> {node_type} {node.get_primary_info()}{left}{right}"
+		return f"{'    ' * level}-> {node.get_primary_info()}{left}{right}"
 
 def query_plan(query: str, cursor: psycopg.Cursor) -> dict:
 	cursor.execute(f"EXPLAIN (FORMAT JSON) {query}")
 	return cursor.fetchone()[0][0]["Plan"]
 
 def alternative_query_plans(query: str, cursor: psycopg.Cursor):
-	scan_types = ["bitmapscan", "indexscan", "indexonlyscan", "seqscan", "tidscan"]
-	join_types = ["hashjoin", "mergejoin", "nestloop"]
-	
 	for disabled_scan_types, disabled_join_types in product(
-		combinations(scan_types, len(scan_types) - 1),
-		combinations(join_types, len(join_types) - 1),
+		combinations(SCAN_TYPE_FLAGS, len(SCAN_TYPE_FLAGS) - 1),
+		combinations(JOIN_TYPE_FLAGS, len(JOIN_TYPE_FLAGS) - 1),
 	):
 		# Enforce single scan type and single join type
 		for disabled_type in disabled_scan_types + disabled_join_types:
