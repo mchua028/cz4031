@@ -9,17 +9,17 @@ from preprocessing import QueryPlanTree
 
 
 class App(tk.Tk):
-    def __init__(self, cursor: psycopg.Cursor):
+    def __init__(self):
         super().__init__()
 
         self.geometry("800x600")
         self.title("Query Analyzer")
 
-        self.ctx = Context(cursor)
+        self.ctx = Context()
 
         self.connection_frame = ConnectionFrame(self, self.ctx)
-        self.connection_frame.grid(column=0, row=0)
-        self.ctx.frames["connection_frame"] = self.connection_frame
+        self.connection_frame.grid(column=0, row=0, columnspan=3)
+        self.ctx.frames["connection"] = self.connection_frame
 
         self.input_query_frame = InputQueryFrame(self, self.ctx)
         self.input_query_frame.grid(column=0, row=1)
@@ -39,15 +39,12 @@ class Updatable(ABC):
         pass
 
 class Context:
-    vars: dict[str, tk.Variable]
-    frames: dict[str, Updatable]
-
-    def __init__(self, cursor: psycopg.Cursor) -> None:
-        self.vars = {
+    def __init__(self) -> None:
+        self.vars: dict[str, tk.Variable] = {
             "input_query": tk.StringVar(),
         }
-        self.frames = {}
-        self.cursor = cursor
+        self.frames: dict[str, Updatable] = {}
+        self.cursor: Optional[psycopg.Cursor] = None
 
 class AnnotatedQueryFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
@@ -60,7 +57,7 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         self.annotated_query_label.grid(column=0, row=1)
 
     def update_changes(self, *args, **kwargs):
-        if kwargs["qptree"] is None:
+        if kwargs.get("qptree") is None:
             self.annotated_query_label["text"] = ""
         else:
             self.annotated_query_label["text"] = kwargs["qptree"].get_annotation()
@@ -76,7 +73,7 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
         self.visualize_query_plan_label.grid(row=1)
 
     def update_changes(self, *args, **kwargs):
-        if kwargs["qptree"] is None:
+        if kwargs.get("qptree") is None:
             self.visualize_query_plan_label["text"] = ""
         else:
             self.visualize_query_plan_label["text"] = kwargs["qptree"].get_visualization()
@@ -87,10 +84,10 @@ class InputQueryFrame(ttk.Frame, Updatable):
 
         self.top_label = tk.Label(self, text="Enter SQL query below")
         self.top_label.grid(row=0)
-        self.input_query_text = tk.Text(self, height=10, width=50)
+        self.input_query_text = tk.Text(self, height=10, width=50, state="disabled")
         self.input_query_text.grid(row=1)
 
-        self.analyze_query_button = ttk.Button(self, text="Analyze Query", command=self.analyze_query, padding=10)
+        self.analyze_query_button = ttk.Button(self, text="Analyze Query", command=self.analyze_query, padding=10, state=["disabled"])
         self.analyze_query_button.grid(row=2)
 
         self.ctx = ctx
@@ -110,7 +107,17 @@ class InputQueryFrame(ttk.Frame, Updatable):
         self.ctx.frames["annotated_query"].update_changes(qptree=qptree)
 
     def update_changes(self, *args, **kwargs):
-        pass
+        # Reset input
+        self.input_query_text.delete("1.0", tk.END)
+        self.ctx.frames["visualize_query_plan"].update_changes()
+        self.ctx.frames["annotated_query"].update_changes()
+
+        if kwargs.get("disabled"):
+            self.input_query_text.config(state="disabled")
+            self.analyze_query_button.state(["disabled"])
+        else:
+            self.input_query_text.config(state="normal")
+            self.analyze_query_button.state(["!disabled"])
 
 class ConnectionFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
@@ -128,7 +135,14 @@ class ConnectionFrame(ttk.Frame, Updatable):
         self.ctx = ctx
 
     def connect(self):
-        pass
+        try:
+            conninfo = self.connection_text.get()
+            self.ctx.cursor = psycopg.connect(conninfo).cursor()
+            self.ctx.frames["input_query"].update_changes(disabled=False)
+        except Exception as err:
+            self.ctx.cursor = None
+            self.ctx.frames["input_query"].update_changes(disabled=True)
+            messagebox.showerror("Error", err)
 
     def update_changes(self, *args, **kwargs):
         pass
