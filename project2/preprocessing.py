@@ -131,16 +131,14 @@ def traverse_aqp(node: Optional[QueryPlanTreeNode], join_nodes_dict: dict):
 	traverse_aqp(node.right, join_nodes_dict)
 	
 	join_types_set = {"Nested Loop", "Merge Join", "Hash Join"}
-	node_info = node.info
+	relation_key = ""
 
-	relation_list = []
 	for inv_relation in node.involving_relations:
-		relation_list.append(f"{inv_relation.relation_name} {inv_relation.alias}")
-
-	if node_info['Node Type'] in join_types_set:
-		relation_key = ' '.join(relation_list)
-		node_cost = node_info['Total Cost'] - node_info['Startup Cost']
-		join_type = node_info['Node Type']
+		relation_key = f"{relation_key} {str(inv_relation)}" if relation_key != "" else str(inv_relation)
+	
+	if node.info['Node Type'] in join_types_set:
+		node_cost = node.info['Total Cost'] - node.info['Startup Cost']
+		join_type = node.info['Node Type']
 		if relation_key in join_nodes_dict:
 			join_nodes_dict[relation_key][join_type] = node_cost
 		else:
@@ -150,4 +148,6 @@ def handle_join_nodes(aqp_list: list[QueryPlanTree]) -> dict[str: dict]:
 	join_nodes_dict = dict()
 	for aqp in aqp_list: 
 		traverse_aqp(aqp.root, join_nodes_dict)
+	for k, v in join_nodes_dict.items():
+		print(k, v)
 	return join_nodes_dict
