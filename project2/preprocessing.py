@@ -158,5 +158,9 @@ def collect_joins_from_aqp_trees(aqp_trees: list[QueryPlanTree]) -> dict[str, di
 			)
 			if relations_key not in result:
 				result[relations_key] = {}
-			result[relations_key][node.info["Node Type"]] = node.get_cost()
+
+			node_type = node.info["Node Type"]
+			cost = node.get_cost()
+			if node_type not in result[relations_key] or cost < result[relations_key][node_type] :
+				result[relations_key][node_type] = cost
 	return result
