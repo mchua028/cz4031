@@ -43,12 +43,12 @@ class QueryPlanTreeNode:
 		return primary_info
 
 	def get_cost(self) -> float:
-		cost:float=self.info["Total Cost"]
-		if (self.right is not None):
-			cost=cost-self.right.info["Total Cost"]
-		if (self.left is not None):
-			cost=cost-self.left.info["Total Cost"]
-		return round(cost,1)
+		cost: float = self.info["Total Cost"]
+		if self.right is not None:
+			cost -= self.right.info["Total Cost"]
+		if self.left is not None:
+			cost -= self.left.info["Total Cost"]
+		return round(cost, 1)
 
 class QueryPlanTree:
 	root: Optional[QueryPlanTreeNode]
@@ -106,7 +106,7 @@ class QueryPlanTree:
 		info = {k: v for k, v in plan.items() if k != "Plans"}
 		if "Relation Name" in plan and "Alias" in plan:
 			involving_relations.add(Relation(plan["Relation Name"], plan["Alias"]))
-	
+
 		node = QueryPlanTreeNode(info, left, right, involving_relations)
 		if plan["Node Type"] in SCAN_TYPES:
 			self.scan_nodes.append(node)
@@ -166,10 +166,11 @@ def collect_joins_from_aqp_trees(aqp_trees: list[QueryPlanTree]) -> dict[str, di
 
 			node_type = node.info["Node Type"]
 			cost = node.get_cost()
-			if node_type not in result[relations_key] or cost < result[relations_key][node_type] :
+			if node_type not in result[relations_key] or cost < result[relations_key][node_type]:
 				result[relations_key][node_type] = cost
-	
+
 	return result
+
 def collect_scans_from_aqp_trees(aqp_trees: list[QueryPlanTree]) -> dict[str, dict[str, float]]:
 	result = {}
 	for tree in aqp_trees:
@@ -178,16 +179,16 @@ def collect_scans_from_aqp_trees(aqp_trees: list[QueryPlanTree]) -> dict[str, di
 			if node_type=="Bitmap Index Scan":
 				continue
 			if node_type=="Bitmap Heap Scan":
-				node_type="Bitmap Scan"
+				node_type = "Bitmap Scan"
 			relations_key = " ".join(
 				# Sorting is required as the relations may not be in order
 				sorted(map(lambda rel: str(rel), node.involving_relations))
 			)
-			
+
 			if relations_key not in result:
 				result[relations_key] = {}
 			cost = node.get_cost()
-			if node_type not in result[relations_key] or cost < result[relations_key][node_type] :
+			if node_type not in result[relations_key] or cost < result[relations_key][node_type]:
 				result[relations_key][node_type] = cost
-			
+
 	return result
