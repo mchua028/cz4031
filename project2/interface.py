@@ -18,23 +18,20 @@ class App(tk.Tk):
         self.ctx = Context()
 
         self.connection_frame = ConnectionFrame(self, self.ctx)
-        self.connection_frame.grid(column=0, row=0, columnspan=3)
+        self.connection_frame.grid(column=0, row=0, columnspan=6)
         self.ctx.frames["connection"] = self.connection_frame
 
         self.input_query_frame = InputQueryFrame(self, self.ctx)
-        self.input_query_frame.grid(column=2, row=1, columnspan=6)
+        self.input_query_frame.grid(column=0, row=1, columnspan=6)
         self.ctx.frames["input_query"] = self.input_query_frame
-        self.input_query_frame.place(relx=0.5, rely=0.2, anchor="center")
 
         self.annotated_query_frame = AnnotatedQueryFrame(self, self.ctx)
-        self.annotated_query_frame.grid(column=1, row=6, columnspan=5)
+        self.annotated_query_frame.grid(column=0, row=2, columnspan=3)
         self.ctx.frames["annotated_query"] = self.annotated_query_frame
-        self.annotated_query_frame.place(relx=0.5, rely=0.4, anchor="e")
 
         self.visualize_query_plan_frame = VisualizeQueryPlanFrame(self, self.ctx)
-        self.visualize_query_plan_frame.grid(column=7, row=6, columnspan=5)
+        self.visualize_query_plan_frame.grid(column=3, row=2, columnspan=3)
         self.ctx.frames["visualize_query_plan"] = self.visualize_query_plan_frame
-        self.visualize_query_plan_frame.place(relx=0.5, rely=0.4, anchor="w")
 
 class Updatable(ABC):
     @abstractmethod
