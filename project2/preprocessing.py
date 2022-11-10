@@ -71,22 +71,47 @@ class QueryPlanTree:
 		qptree.root = qptree._build(plan)
 		return qptree
 
-	def get_annotation(self):
-		return QueryPlanTree._get_annotation_helper(self.root, 1)[0]
+	def get_annotation(self,query: str,cursor:psycopg.Cursor):
+		aqps:list[QueryPlanTree] = alternative_query_plan_trees(query,cursor)
+		scans_from_aqps:dict[str,dict[str,float]] = collect_scans_from_aqp_trees(aqps)
+		return QueryPlanTree._get_annotation_helper(self.root, 1, scans_from_aqps)[0]
 
 	@staticmethod
-	def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int):
+	def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_from_aqps:dict[str,dict[str,float]]):
 		if node is None:
 			return "", step
 
-		left_annotation, step = QueryPlanTree._get_annotation_helper(node.left, step)
-		right_annotation, step = QueryPlanTree._get_annotation_helper(node.right, step)
+		left_annotation, step = QueryPlanTree._get_annotation_helper(node.left, step,scans_from_aqps)
+		right_annotation, step = QueryPlanTree._get_annotation_helper(node.right, step,scans_from_aqps)
 
 		on_annotation = ""
+		reason = ""
 		if node.info["Node Type"] in SCAN_TYPES and node.info["Node Type"] != "Bitmap Heap Scan":
-			on_annotation += f" on {str(next(iter(node.involving_relations)))}"
+			relation=str(next(iter(node.involving_relations)))
+			on_annotation += f" on {relation}. "
+			more_costly_scans:dict[str,float] = {}
+			less_costly_scans:dict[str,float] = {}
+			print(relation)
+			scan_choices=scans_from_aqps.get(relation)
+			print(scan_choices)
+			chosen_scan_cost=scan_choices.get(node.info["Node Type"])
+			for type,cost in scan_choices.items():
+				if type!=node.info["Node Type"] and cost>chosen_scan_cost:
+					more_costly_scans[type]=round((cost-chosen_scan_cost)/chosen_scan_cost,2)
+				elif type!=node.info["Node Type"] and cost<chosen_scan_cost:
+					more_costly_scans[type]=round((chosen_scan_cost-cost)/chosen_scan_cost,2)
 
-		return f"{left_annotation}{right_annotation}\n{step}. Perform {node.info['Node Type']}{on_annotation}", step + 1
+			if len(more_costly_scans)!=0:
+				for type,cost in more_costly_scans.items():
+					reason+=f"Using {type} costs {cost}x more. "
+			elif not(len(scan_choices)>1):
+				reason+="This is the only possible scan type among all AQPs. "
+			else:
+				for type,cost in less_costly_scans.items():
+					reason+=f"Using {type} costs {cost}x less. "
+				reason+="These cost savings are negligible. "
+		
+		return f"{left_annotation}{right_annotation}\n{step}. Perform {node.info['Node Type']}{on_annotation}{reason}", step + 1
 
 	def _build(self, plan: dict):
 		# Post-order traversal
