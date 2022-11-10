@@ -79,10 +79,14 @@ class QueryPlanTree:
 		if node is None:
 			return "", step
 
-		left, step = QueryPlanTree._get_annotation_helper(node.left, step)
-		right, step = QueryPlanTree._get_annotation_helper(node.right, step)
+		left_annotation, step = QueryPlanTree._get_annotation_helper(node.left, step)
+		right_annotation, step = QueryPlanTree._get_annotation_helper(node.right, step)
 
-		return f"{left}{right}\n{step}. Perform {node.info['Node Type']}", step + 1
+		on_annotation = ""
+		if node.info["Node Type"] in SCAN_TYPES and node.info["Node Type"] != "Bitmap Heap Scan":
+			on_annotation += f" on {str(next(iter(node.involving_relations)))}"
+
+		return f"{left_annotation}{right_annotation}\n{step}. Perform {node.info['Node Type']}{on_annotation}", step + 1
 
 	def _build(self, plan: dict):
 		# Post-order traversal
