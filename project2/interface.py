@@ -12,25 +12,41 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.geometry("800x600")
+        self.geometry("1280x800")
         self.title("Query Analyzer")
-
+        self.resizable(False, False)
         self.ctx = Context()
 
-        self.connection_frame = ConnectionFrame(self, self.ctx)
-        self.connection_frame.grid(column=0, row=0, columnspan=3)
+        self.container = ttk.Frame(self)
+        self.container.pack(fill=tk.BOTH, expand=1)
+
+        self.canvas = tk.Canvas(self.container)
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+
+        self.scroll_bar = ttk.Scrollbar(self.container, orient="vertical", command=self.canvas.yview)
+        self.scroll_bar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.main_frame = ttk.Frame(self.canvas, width=1000, height=100)
+        self.main_frame.bind(
+            "<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
+        self.canvas.create_window((0, 0), window=self.main_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scroll_bar.set)
+
+        self.connection_frame = ConnectionFrame(self.main_frame, self.ctx)
+        self.connection_frame.grid(column=0, row=0, columnspan=6)
         self.ctx.frames["connection"] = self.connection_frame
 
-        self.input_query_frame = InputQueryFrame(self, self.ctx)
-        self.input_query_frame.grid(column=0, row=1)
+        self.input_query_frame = InputQueryFrame(self.main_frame, self.ctx)
+        self.input_query_frame.grid(column=0, row=1, columnspan=6)
         self.ctx.frames["input_query"] = self.input_query_frame
 
-        self.annotated_query_frame = AnnotatedQueryFrame(self, self.ctx)
-        self.annotated_query_frame.grid(column=1, row=1)
+        self.annotated_query_frame = AnnotatedQueryFrame(self.main_frame, self.ctx)
+        self.annotated_query_frame.grid(column=0, row=2, columnspan=3)
         self.ctx.frames["annotated_query"] = self.annotated_query_frame
 
-        self.visualize_query_plan_frame = VisualizeQueryPlanFrame(self, self.ctx)
-        self.visualize_query_plan_frame.grid(column=2, row=1)
+        self.visualize_query_plan_frame = VisualizeQueryPlanFrame(self.main_frame, self.ctx)
+        self.visualize_query_plan_frame.grid(column=3, row=2, columnspan=3)
         self.ctx.frames["visualize_query_plan"] = self.visualize_query_plan_frame
 
 class Updatable(ABC):
@@ -51,10 +67,10 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         super().__init__(master)
         self.ctx = ctx
 
-        self.top_label = tk.Label(self, text="Annotation")
-        self.top_label.grid(row=0)
-        self.annotated_query_label = ttk.Label(self)
-        self.annotated_query_label.grid(column=0, row=1)
+        self.top_label = tk.Label(self, text="Annotation", font=("Helvetica", 18, "bold"))
+        self.top_label.grid(column=1, row=6, columnspan=5)
+        self.annotated_query_label = ttk.Label(self, wraplength=500, font=("Helvetica", 10), width=80, anchor="center")
+        self.annotated_query_label.grid(column=1, row=7, columnspan=5)
 
     def update_changes(self, *args, **kwargs):
         if kwargs.get("qptree") is None:
@@ -67,10 +83,10 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
         super().__init__(master)
         self.ctx = ctx
 
-        self.top_label = tk.Label(self, text="Visualization")
-        self.top_label.grid(row=0)
-        self.visualize_query_plan_label = ttk.Label(self)
-        self.visualize_query_plan_label.grid(row=1)
+        self.top_label = tk.Label(self, text="Visualization", font=("Helvetica", 18, "bold"))
+        self.top_label.grid(column=7, row=6, columnspan=5)
+        self.visualize_query_plan_label = ttk.Label(self, wraplength=500, font=("Helvetica", 10), width=80, anchor="center")
+        self.visualize_query_plan_label.grid(column=7, row=7, columnspan=5)
 
     def update_changes(self, *args, **kwargs):
         if kwargs.get("qptree") is None:
@@ -82,13 +98,13 @@ class InputQueryFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
         super().__init__(master)
 
-        self.top_label = tk.Label(self, text="Enter SQL query below")
-        self.top_label.grid(row=0)
+        self.top_label = tk.Label(self, text="Enter SQL query below", font=("Helvetica", 18, "bold"))
+        self.top_label.grid(row=1)
         self.input_query_text = tk.Text(self, height=10, width=50, state="disabled")
-        self.input_query_text.grid(row=1)
+        self.input_query_text.grid(row=2)
 
         self.analyze_query_button = ttk.Button(self, text="Analyze Query", command=self.analyze_query, padding=10, state=["disabled"])
-        self.analyze_query_button.grid(row=2)
+        self.analyze_query_button.grid(row=3)
 
         self.ctx = ctx
 
