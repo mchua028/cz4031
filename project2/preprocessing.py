@@ -86,7 +86,7 @@ class QueryPlanTree:
 
 		on_annotation = ""
 		reason = ""
-		if node.info["Node Type"] in SCAN_TYPES and node.info["Node Type"] != "Bitmap Heap Scan":
+		if node.info["Node Type"] in SCAN_TYPES and node.info["Node Type"] != "Bitmap Index Scan":
 			relation=str(next(iter(node.involving_relations)))
 			on_annotation += f" on {relation}. "
 			more_costly_scans:dict[str,float] = {}
@@ -94,7 +94,10 @@ class QueryPlanTree:
 			print(relation)
 			scan_choices=scans_from_aqps.get(relation)
 			print(scan_choices)
-			chosen_scan_cost=scan_choices.get(node.info["Node Type"])
+			if node.info["Node Type"]=="Bitmap Heap Scan":
+				chosen_scan_cost=scan_choices.get("Bitmap Scan")
+			else:
+				chosen_scan_cost=scan_choices.get(node.info["Node Type"])
 			for type,cost in scan_choices.items():
 				if type!=node.info["Node Type"] and cost>chosen_scan_cost:
 					more_costly_scans[type]=round((cost-chosen_scan_cost)/chosen_scan_cost,2)
