@@ -23,12 +23,10 @@ class Relation:
 		else:
 			return f"{self.relation_name} {self.alias}"
 
-# Assume always binary tree
 class QueryPlanTreeNode:
-	def __init__(self, info: dict={}, left: Optional[Self]=None, right: Optional[Self]=None, involving_relations: set[Relation] = set()):
+	def __init__(self, info: dict={}, children: list[Self] = [], involving_relations: set[Relation] = set()):
 		self.info = info
-		self.left = left
-		self.right = right
+		self.children = children
 		self.involving_relations = involving_relations
 
 	def get_primary_info(self) -> dict:
@@ -44,10 +42,8 @@ class QueryPlanTreeNode:
 
 	def get_cost(self) -> float:
 		cost: float = self.info["Total Cost"]
-		if self.right is not None:
-			cost -= self.right.info["Total Cost"]
-		if self.left is not None:
-			cost -= self.left.info["Total Cost"]
+		for child in self.children:
+			cost -= child.info["Total Cost"]
 		return round(cost, 1)
 
 class QueryPlanTree:
@@ -81,8 +77,10 @@ class QueryPlanTree:
 		if node is None:
 			return "", step
 
-		left_annotation, step = QueryPlanTree._get_annotation_helper(node.left, step,scans_from_aqps)
-		right_annotation, step = QueryPlanTree._get_annotation_helper(node.right, step,scans_from_aqps)
+		children_annotations = []
+		for child in node.children:
+			child_annotation, step = QueryPlanTree._get_annotation_helper(child, step, scans_from_aqps)
+			children_annotations.append(child_annotation)
 
 		on_annotation = ""
 		reason = ""
@@ -91,9 +89,7 @@ class QueryPlanTree:
 			on_annotation += f" on {relation}. "
 			more_costly_scans:dict[str,float] = {}
 			less_costly_scans:dict[str,float] = {}
-			print(relation)
 			scan_choices=scans_from_aqps.get(relation)
-			print(scan_choices)
 			if node.info["Node Type"]=="Bitmap Heap Scan":
 				chosen_scan_cost=scan_choices.get("Bitmap Scan")
 			else:
@@ -113,8 +109,8 @@ class QueryPlanTree:
 				for type,cost in less_costly_scans.items():
 					reason+=f"Using {type} costs {cost}x less. "
 				reason+="These cost savings are negligible. "
-		
-		return f"{left_annotation}{right_annotation}\n{step}. Perform {node.info['Node Type']}{on_annotation}{reason}", step + 1
+
+		return "".join(children_annotations) + f"\n{step}. Perform {node.info['Node Type']}{on_annotation}{reason}", step + 1
 
 	def _build(self, plan: dict):
 		# Post-order traversal
@@ -122,24 +118,21 @@ class QueryPlanTree:
 			return None
 
 		# Build subtrees
-		left: Optional[QueryPlanTreeNode] = None
-		right: Optional[QueryPlanTreeNode] = None
+		children: list[QueryPlanTreeNode] = []
 		involving_relations = set()
 
 		subplans: Optional[list[dict]] = plan.get("Plans")
 		if subplans is not None:
-			if len(subplans) >= 1:
-				left = self._build(subplans[0])
-				involving_relations.update(left.involving_relations)
-			if len(subplans) >= 2:
-				right = self._build(subplans[1])
-				involving_relations.update(right.involving_relations)
+			for subplan in subplans:
+				child = self._build(subplan)
+				children.append(child)
+				involving_relations.update(child.involving_relations)
 
 		info = {k: v for k, v in plan.items() if k != "Plans"}
 		if "Relation Name" in plan and "Alias" in plan:
 			involving_relations.add(Relation(plan["Relation Name"], plan["Alias"]))
 
-		node = QueryPlanTreeNode(info, left, right, involving_relations)
+		node = QueryPlanTreeNode(info, children, involving_relations)
 		if plan["Node Type"] in SCAN_TYPES:
 			self.scan_nodes.append(node)
 		elif plan["Node Type"] in JOIN_TYPES:
@@ -155,15 +148,14 @@ class QueryPlanTree:
 		if node is None:
 			return ""
 
-		left = QueryPlanTree._get_visualization_helper(node.left, level + 1)
-		if left != "":
-			left = "\n" + left
+		children_visualizations = []
+		for child in node.children:
+			child_visualization = QueryPlanTree._get_visualization_helper(child, level + 1)
+			if child_visualization == "":
+				continue
+			children_visualizations.append(f"\n{child_visualization}")
 
-		right = QueryPlanTree._get_visualization_helper(node.right, level + 1)
-		if right != "":
-			right = "\n" + right
-
-		return f"{'    ' * level}-> {node.get_primary_info()}{left}{right}"
+		return f"{':   ' * level}-> {node.get_primary_info()}" + "".join(children_visualizations)
 
 def query_plan(query: str, cursor: psycopg.Cursor) -> dict:
 	cursor.execute(f"EXPLAIN (FORMAT JSON) {query}")
