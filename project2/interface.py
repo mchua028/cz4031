@@ -76,7 +76,7 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         if kwargs.get("qptree") is None:
             self.annotated_query_label["text"] = ""
         else:
-            self.annotated_query_label["text"] = kwargs["qptree"].get_annotation()
+            self.annotated_query_label["text"] = kwargs["qptree"].get_annotation(kwargs.get("query"),self.ctx.cursor)
 
 class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
@@ -120,13 +120,14 @@ class InputQueryFrame(ttk.Frame, Updatable):
 
         self.ctx.cursor.connection.rollback()
         self.ctx.frames["visualize_query_plan"].update_changes(qptree=qptree)
-        self.ctx.frames["annotated_query"].update_changes(qptree=qptree)
+        self.ctx.frames["annotated_query"].update_changes(qptree=qptree,query=input_query)
 
     def update_changes(self, *args, **kwargs):
+        input_query = self.input_query_text.get("1.0", "end-1c")
         # Reset input
         self.input_query_text.delete("1.0", tk.END)
         self.ctx.frames["visualize_query_plan"].update_changes()
-        self.ctx.frames["annotated_query"].update_changes()
+        self.ctx.frames["annotated_query"].update_changes(query=input_query)
 
         if kwargs.get("disabled"):
             self.input_query_text.config(state="disabled")
