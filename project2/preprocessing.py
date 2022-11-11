@@ -83,9 +83,13 @@ class QueryPlanTree:
 			return "", step
 
 		children_annotations = []
+		children_steps = []
 		for child in node.children:
 			child_annotation, step = QueryPlanTree._get_annotation_helper(child, step, scans_from_aqps, joins_from_aqps)
+			if child_annotation == "":
+				continue
 			children_annotations.append(child_annotation)
+			children_steps.append(f"({step - 1})")
 
 		on_annotation = ""
 		reason = ""
@@ -119,7 +123,7 @@ class QueryPlanTree:
 			relation_key = " ".join(
 				sorted(map(lambda rel: str(rel), node.involving_relations))
 			)
-			on_annotation = f"on {relation_key},"
+			on_annotation = "on result from " + ", ".join(children_steps)
 			aqp_join_types_dict = {}
 			if relation_key not in joins_from_aqps:
 				reason += f"This is the only join type performed on {relation_key} among all AQPs."
@@ -127,7 +131,7 @@ class QueryPlanTree:
 				aqp_join_types_dict = joins_from_aqps.get(relation_key)
 				join_type = node.info["Node Type"]
 				cur_node_join_cost = node.get_cost()
-				
+
 				for join_type, join_cost in aqp_join_types_dict.items():
 					cost_scale = round(join_cost/ cur_node_join_cost, 2)
 					if cost_scale > 1.0:
@@ -136,7 +140,7 @@ class QueryPlanTree:
 						reason += f"\n\tUsing {join_type} in this AQP with equal cost as {join_type} in QEP."
 					else:
 						reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x less."
-			
+
 		return "".join(children_annotations) + f"\n{step}. Perform {node.info['Node Type']} {on_annotation}{reason}", step + 1
 
 	def _build(self, plan: dict):
