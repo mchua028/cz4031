@@ -84,7 +84,7 @@ class QueryPlanTree:
 
 		children_annotations = []
 		for child in node.children:
-			child_annotation, step = QueryPlanTree._get_annotation_helper(child, step, scans_from_aqps)
+			child_annotation, step = QueryPlanTree._get_annotation_helper(child, step, scans_from_aqps, joins_from_aqps)
 			children_annotations.append(child_annotation)
 
 		on_annotation = ""
@@ -104,7 +104,7 @@ class QueryPlanTree:
 				if type!=node.info["Node Type"] and cost>chosen_scan_cost:
 					more_costly_scans[type]=round((cost-chosen_scan_cost)/chosen_scan_cost,2)
 				elif type!=node.info["Node Type"] and cost<chosen_scan_cost:
-					more_costly_scans[type]=round((chosen_scan_cost-cost)/chosen_scan_cost,2)
+					less_costly_scans[type]=round((chosen_scan_cost-cost)/chosen_scan_cost,2)
 
 			if len(more_costly_scans)!=0:
 				for type,cost in more_costly_scans.items():
@@ -137,9 +137,7 @@ class QueryPlanTree:
 					else:
 						reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x less."
 			
-
-		
-		return f"{left_annotation}{right_annotation}\n{step}. Perform {node.info['Node Type']} {on_annotation}{reason}", step + 1
+		return "".join(children_annotations) + f"\n{step}. Perform {node.info['Node Type']} {on_annotation}{reason}", step + 1
 
 	def _build(self, plan: dict):
 		# Post-order traversal
