@@ -133,7 +133,7 @@ class QueryPlanTree:
 		else:
 			on_annotation = "on result(s) from " + ", ".join(children_steps)
 
-		return "".join(children_annotations) + f"\n{step}. Perform {node.info['Node Type']} {on_annotation}{reason}", step + 1
+		return "".join(children_annotations) + f"\n\n{step}. Perform {node.info['Node Type']} {on_annotation}{reason}", step + 1
 
 	def _build(self, plan: dict):
 		# Post-order traversal
