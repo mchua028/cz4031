@@ -101,11 +101,11 @@ class QueryPlanTree:
 				chosen_scan_cost=node.get_cost()
 			for type,cost in scan_choices.items():
 				if type!=node.info["Node Type"] and math.isclose(cost,chosen_scan_cost):
-					reason+=f"\n\tUsing {type} has similar costs as {node.info['Node Type']}. "
+					reason+=f"\n\tUsing {type} in AQP has similar costs as {node.info['Node Type']}. "
 				elif type!=node.info["Node Type"] and cost>chosen_scan_cost:
-					reason+=f"\n\tUsing {type} costs {round((cost-chosen_scan_cost)/chosen_scan_cost,2)}x more."
+					reason+=f"\n\tUsing {type} in AQP costs {round((cost-chosen_scan_cost)/chosen_scan_cost,2)}x more."
 				elif type!=node.info["Node Type"] and cost<chosen_scan_cost:
-					reason+=f"\n\tUsing {type} costs {round((chosen_scan_cost-cost)/chosen_scan_cost,2)}x less."
+					reason+=f"\n\tUsing {type} in AQP costs {round((chosen_scan_cost-cost)/chosen_scan_cost,2)}x less."
 
 			if not(len(scan_choices)>1):
 				reason+="\n\tThis is the only possible scan type among all AQPs. "
