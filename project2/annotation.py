@@ -17,7 +17,7 @@ def get_annotation(qptree: QueryPlanTree, cursor:psycopg.Cursor):
     return _get_annotation_helper(qptree.root, 1, scans_from_aqps, joins_from_aqps)[0]+"\n\nNote: Costs shown are estimated costs rather than actual runtime costs."
 
 def get_visualization(qptree: QueryPlanTree):
-    return _get_visualization_helper(qptree.root, 0)
+    return "\n\n"+_get_visualization_helper(qptree.root, 0)
 
 def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_from_aqps:dict[str,dict[str,float]], joins_from_aqps:dict[str,dict[str,float]]):
     if node is None:
