@@ -47,31 +47,27 @@ class QueryPlanTreeNode:
 		return round(cost, 1)
 
 class QueryPlanTree:
-	root: Optional[QueryPlanTreeNode]
-	scan_nodes: list[QueryPlanTreeNode]
-	join_nodes: list[QueryPlanTreeNode]
-
-	def __init__(self):
-		self.root = None
-		self.scan_nodes = []
-		self.join_nodes = []
+	def __init__(self, query: str=""):
+		self.root: Optional[QueryPlanTreeNode] = None
+		self.scan_nodes: list[QueryPlanTreeNode] = []
+		self.join_nodes: list[QueryPlanTreeNode] = []
+		self.query = query
 
 	@staticmethod
 	def from_query(query: str, cursor: psycopg.Cursor):
 		plan = query_plan(query, cursor)
-		return QueryPlanTree.from_plan(plan)
+		return QueryPlanTree.from_plan(plan, query)
 
 	@staticmethod
-	def from_plan(plan: dict):
-		qptree = QueryPlanTree()
+	def from_plan(plan: dict, query: str):
+		qptree = QueryPlanTree(query)
 		qptree.root = qptree._build(plan)
 		return qptree
 
-	def get_annotation(self,query: str,cursor:psycopg.Cursor):
-
-		aqps:list[QueryPlanTree] = list(alternative_query_plan_trees(query,cursor))
-		scans_from_aqps:dict[str,dict[str,float]] = collect_scans_from_aqp_trees(aqps)
-		joins_from_aqps:dict[str,dict[str,float]] = collect_joins_from_aqp_trees(aqps)
+	def get_annotation(self, cursor:psycopg.Cursor):
+		aqps: list[QueryPlanTree] = list(alternative_query_plan_trees(self.query, cursor))
+		scans_from_aqps: dict[str,dict[str,float]] = collect_scans_from_aqp_trees(aqps)
+		joins_from_aqps: dict[str,dict[str,float]] = collect_joins_from_aqp_trees(aqps)
 		return QueryPlanTree._get_annotation_helper(self.root, 1, scans_from_aqps, joins_from_aqps)[0]
 
 	@staticmethod
@@ -198,7 +194,7 @@ def alternative_query_plans(query: str, cursor: psycopg.Cursor):
 
 def alternative_query_plan_trees(query: str, cursor: psycopg.Cursor):
 	for plan in alternative_query_plans(query, cursor):
-		yield QueryPlanTree.from_plan(plan)
+		yield QueryPlanTree.from_plan(plan, query)
 
 def collect_joins_from_aqp_trees(aqp_trees: list[QueryPlanTree]) -> dict[str, dict[str, float]]:
 	result = {}
