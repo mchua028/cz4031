@@ -14,7 +14,7 @@ def get_annotation(qptree: QueryPlanTree, cursor:psycopg.Cursor):
     aqps: list[QueryPlanTree] = list(alternative_query_plan_trees(qptree.query, cursor))
     scans_from_aqps: dict[str,dict[str,float]] = collect_scans_from_aqp_trees(aqps)
     joins_from_aqps: dict[str,dict[str,float]] = collect_joins_from_aqp_trees(aqps)
-    return _get_annotation_helper(qptree.root, 1, scans_from_aqps, joins_from_aqps)[0]+f"\n\nTotal cost of QEP={qptree.total_cost}.\nMinimum total cost across all AQPs={min(map(lambda aqp: aqp.total_cost, aqps))}.\n\nNote: Costs shown are estimated costs rather than actual runtime costs."
+    return _get_annotation_helper(qptree.root, 1, scans_from_aqps, joins_from_aqps)[0]+f"\n\nTotal cost of QEP={qptree.root.info['Total Cost']}.\nMinimum total cost across all AQPs={min(map(lambda aqp: aqp.root.info['Total Cost'], aqps))}.\n\nNote: Costs shown are estimated costs rather than actual runtime costs."
 
 def get_visualization(qptree: QueryPlanTree):
     return _get_visualization_helper(qptree.root, 0)
