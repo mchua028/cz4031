@@ -48,6 +48,7 @@ class QueryPlanTree:
 		self.scan_nodes: list[QueryPlanTreeNode] = []
 		self.join_nodes: list[QueryPlanTreeNode] = []
 		self.query = query
+		self.total_cost: int = 0
 
 	@staticmethod
 	def from_query(query: str, cursor: psycopg.Cursor):
@@ -85,6 +86,7 @@ class QueryPlanTree:
 			self.scan_nodes.append(node)
 		elif plan["Node Type"] in JOIN_TYPES:
 			self.join_nodes.append(node)
+		self.total_cost=plan["Total Cost"]
 
 		return node
 

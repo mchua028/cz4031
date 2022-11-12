@@ -14,7 +14,7 @@ def get_annotation(qptree: QueryPlanTree, cursor:psycopg.Cursor):
     aqps: list[QueryPlanTree] = list(alternative_query_plan_trees(qptree.query, cursor))
     scans_from_aqps: dict[str,dict[str,float]] = collect_scans_from_aqp_trees(aqps)
     joins_from_aqps: dict[str,dict[str,float]] = collect_joins_from_aqp_trees(aqps)
-    return _get_annotation_helper(qptree.root, 1, scans_from_aqps, joins_from_aqps)[0]+"\n\nNote: Costs shown are estimated costs rather than actual runtime costs."
+    return _get_annotation_helper(qptree.root, 1, scans_from_aqps, joins_from_aqps)[0]+f"\n\nTotal cost of QEP={qptree.total_cost}.\nMinimum total cost across all AQPs={min(map(lambda aqp: aqp.total_cost, aqps))}.\n\nNote: Costs shown are estimated costs rather than actual runtime costs."
 
 def get_visualization(qptree: QueryPlanTree):
     return _get_visualization_helper(qptree.root, 0)
@@ -44,14 +44,15 @@ def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_f
         else:
             chosen_scan_cost = node.get_cost()
         for node_type, cost in scan_choices.items():
-            cost_diff = abs(cost - chosen_scan_cost)
-            cost_diff_ratio = cost_diff / chosen_scan_cost
-            if node_type != node.info["Node Type"] and math.isclose(cost, chosen_scan_cost):
-                reason += f"\n\tUsing {node_type} in AQP has similar costs as {node.info['Node Type']}. "
-            elif node_type != node.info["Node Type"] and cost > chosen_scan_cost:
-                reason += f"\n\tUsing {node_type} in AQP costs {round(cost_diff_ratio, 2)}x more, which will result in increased cost of {round(cost_diff, 2)}."
-            elif node_type != node.info["Node Type"] and cost < chosen_scan_cost:
-                reason += f"\n\tUsing {node_type} in AQP costs {round(cost_diff_ratio, 2)}x less, which will result in cost savings of {round(cost_diff, 2)}."
+            cost_ratio = round(cost / chosen_scan_cost,2)
+            if node_type==node.info["Node Type"]:
+                continue
+            if math.isclose(cost_ratio,1.0):
+                reason+=f"\n\tCost of using {node_type} is similar to cost of using {node.info['Node Type']}. "
+            elif cost_ratio>1.0:
+                reason+=f"\n\tCost of using {node_type} is {cost_ratio}x the cost of using {node.info['Node Type']} (costs {round(cost-chosen_scan_cost,2)} more)."
+            else:
+                reason+=f"\n\tCost of using {node_type} is {cost_ratio}x the cost of using {node.info['Node Type']} (costs {round(chosen_scan_cost-cost,2)} less)."
 
         if len(scan_choices) <= 1:
             reason += "\n\tThis is the only possible scan type among all AQPs. "
@@ -71,11 +72,11 @@ def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_f
             if join_type == node.info["Node Type"]:
                 continue
             if math.isclose(cost_scale, 1.0):
-                reason += f"\n\tUsing {join_type} in this AQP with equal cost as {join_type} in QEP."
+                reason += f"\n\tCost of using {join_type} is similar to cost of using {node.info['Node Type']}."
             elif cost_scale > 1.0:
-                reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x more, which will result in increased cost of {round(join_cost-cur_node_join_cost,2)}."
+                reason += f"\n\tCost of using {join_type} is {cost_scale}x the cost of using {node.info['Node Type']} (costs {round(join_cost-cur_node_join_cost,2)} more)."
             else:
-                reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x less, which will result in cost savings of {round(cur_node_join_cost-join_cost,2)}."
+                reason += f"\n\tCost of using {join_type} is {cost_scale}x the cost of using {node.info['Node Type']} (costs {round(cur_node_join_cost-join_cost,2)} less)."
     else:
         on_annotation = "on result(s) from " + ", ".join(children_steps)
 
@@ -96,16 +97,22 @@ def _get_visualization_helper(node: Optional[QueryPlanTreeNode], level: int):
     return f"{':   ' * level}-> {node.get_primary_info()}" + "".join(children_visualizations)
 
 def alternative_query_plans(query: str, cursor: psycopg.Cursor):
-	for disabled_scan_types, disabled_join_types in product(
-		combinations(SCAN_TYPE_FLAGS, len(SCAN_TYPE_FLAGS) - 1),
-		combinations(JOIN_TYPE_FLAGS, len(JOIN_TYPE_FLAGS) - 1),
-	):
-		# Enforce single scan type and single join type
+	disabled_types =[]
+	for i in range(1,len(SCAN_TYPE_FLAGS)):
+		for j in range(1,len(JOIN_TYPE_FLAGS)):
+			disabled_types.extend(product(
+				combinations(SCAN_TYPE_FLAGS, len(SCAN_TYPE_FLAGS) - i),
+				combinations(JOIN_TYPE_FLAGS, len(JOIN_TYPE_FLAGS) - j),
+			))
+	distinct_aqps=[]
+	for disabled_scan_types, disabled_join_types in disabled_types:
 		for disabled_type in disabled_scan_types + disabled_join_types:
 			cursor.execute(f"SET LOCAL enable_{disabled_type}=false")
-
-		yield query_plan(query, cursor)
+		aqp_plan=query_plan(query, cursor)
+		if aqp_plan not in distinct_aqps:
+			distinct_aqps.append(aqp_plan)
 		cursor.connection.rollback()
+	return distinct_aqps
 
 def alternative_query_plan_trees(query: str, cursor: psycopg.Cursor):
 	for plan in alternative_query_plans(query, cursor):
