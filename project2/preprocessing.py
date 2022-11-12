@@ -1,6 +1,6 @@
 from typing import Optional, Self
 import psycopg
-
+import math
 from itertools import combinations, product
 
 SCAN_TYPES = {"Bitmap Heap Scan", "Bitmap Index Scan", "Index Scan", "Index Only Scan", "Seq Scan", "Tid Scan"}
@@ -68,12 +68,9 @@ class QueryPlanTree:
 		return qptree
 
 	def get_annotation(self,query: str,cursor:psycopg.Cursor):
-		aqps:list[QueryPlanTree] = alternative_query_plan_trees(query,cursor)
+
+		aqps:list[QueryPlanTree] = list(alternative_query_plan_trees(query,cursor))
 		scans_from_aqps:dict[str,dict[str,float]] = collect_scans_from_aqp_trees(aqps)
-		# generator objects can only be iterated over once, therefore we will need to reinitialise
-		# aqps in order to collect join information
-		# See: https://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do-in-python
-		aqps:list[QueryPlanTree] = alternative_query_plan_trees(query,cursor)
 		joins_from_aqps:dict[str,dict[str,float]] = collect_joins_from_aqp_trees(aqps)
 		return QueryPlanTree._get_annotation_helper(self.root, 1, scans_from_aqps, joins_from_aqps)[0]
 
@@ -125,21 +122,20 @@ class QueryPlanTree:
 			)
 			on_annotation = "on result from " + ", ".join(children_steps)
 			aqp_join_types_dict = {}
-			if relation_key not in joins_from_aqps:
-				reason += f"This is the only join type performed on {relation_key} among all AQPs."
-			else:
-				aqp_join_types_dict = joins_from_aqps.get(relation_key)
-				join_type = node.info["Node Type"]
-				cur_node_join_cost = node.get_cost()
+			aqp_join_types_dict = joins_from_aqps.get(relation_key)
+			join_type = node.info["Node Type"]
+			cur_node_join_cost = node.get_cost()
 
-				for join_type, join_cost in aqp_join_types_dict.items():
-					cost_scale = round(join_cost/ cur_node_join_cost, 2)
-					if cost_scale > 1.0:
-						reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x more."
-					elif cost_scale == 1.0:
-						reason += f"\n\tUsing {join_type} in this AQP with equal cost as {join_type} in QEP."
-					else:
-						reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x less."
+			for join_type, join_cost in aqp_join_types_dict.items():
+				cost_scale = round(join_cost/ cur_node_join_cost, 2)
+				if join_type == node.info["Node Type"]:
+					continue
+				elif math.isclose(cost_scale, 1.0) or (cost_scale < 1.0):
+					reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x more."
+				elif math.isclose(cost_scale, 1.0):
+					reason += f"\n\tUsing {join_type} in this AQP with equal cost as {join_type} in QEP."
+				else:
+					reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x less."
 
 		return "".join(children_annotations) + f"\n{step}. Perform {node.info['Node Type']} {on_annotation}{reason}", step + 1
 
