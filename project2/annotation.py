@@ -44,6 +44,12 @@ def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_f
         else:
             chosen_scan_cost = node.get_cost()
         for node_type, cost in scan_choices.items():
+            if chosen_scan_cost==0:
+                if cost>chosen_scan_cost:
+                    reason+=f"\n\tCost of using {node_type} is {round(cost-chosen_scan_cost,2)} more than the cost of using {node.info['Node Type']}."
+                else:
+                    reason+=f"\n\tCost of using {node_type} is similar to cost of using {node.info['Node Type']}. "
+                continue
             cost_ratio = round(cost / chosen_scan_cost,2)
             if node_type==node.info["Node Type"]:
                 continue
@@ -68,6 +74,12 @@ def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_f
         cur_node_join_cost = node.get_cost()
 
         for join_type, join_cost in aqp_join_types_dict.items():
+            if cur_node_join_cost==0:
+                if join_cost>cur_node_join_cost:
+                    reason+=f"\n\tCost of using {join_type} is {round(join_cost-cur_node_join_cost,2)} more than the cost of using {node.info['Node Type']}."
+                else:
+                    reason+=f"\n\tCost of using {join_type} is similar to cost of using {node.info['Node Type']}. "
+                continue
             cost_scale = round(join_cost / cur_node_join_cost, 2)
             if join_type == node.info["Node Type"]:
                 continue
