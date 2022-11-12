@@ -1,19 +1,76 @@
 # CZ4031 - Project 2
 
-## Notes
+## Requirements
 
-- Do use Python virtual environments [(guide)](https://docs.python.org/3/library/venv.html)
+- Python >= 3.11.0
+- PostgresSQL >= 15
+- Database set up in PostgresSQL
 
-## Commands
+## Steps
 
-- Install dependencies
+1. Change directory to folder
+
+```bash
+cd project2
+```
+
+2. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
+# OR
+pip3 install -r requirements.txt
 ```
 
-- Update dependencies
+3. Run project
 
 ```bash
-pip freeze > requirements.txt
+python ./project.py
+# OR
+python3 ./project.py
 ```
+
+4. Establish connection with database
+
+Enter the database connection string into the `Postgres connection string` input.
+
+[Read docs](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+
+Example:
+
+```bash
+postgresql://<USERNAME>:<PASSWORD>@<HOST>:<PORT>/<DATABASE NAME>
+```
+
+5. Analyze query
+
+Enter query into the textbox, and the results will be displayed upon clicking the `Analyze Query` button
+
+## Sample Test
+
+The following sample test uses the `TPC-H` database as a source of data.
+
+1. Enter Query
+
+```postgres
+SELECT customer.c_custkey
+FROM (SELECT * FROM customer WHERE customer.c_custkey > 1) AS customer, nation, orders
+WHERE customer.c_nationkey = nation.n_nationkey AND customer.c_custkey = orders.o_custkey
+ORDER BY customer.c_nationkey, nation.n_nationkey;
+```
+
+2. Click `Analyze Query`
+3. Annotation Results Display
+
+<img
+    style="display: block;
+           margin-left: auto;
+           margin-right: auto;"
+    src="./assets/sample_test_result.png"
+    alt="Our logo">
+</img>
+
+### Additional Information
+
+- [PostgresSQL Optimizer](https://www.postgresql.org/docs/current/planner-optimizer.html)
+- [Scan Methods](https://severalnines.com/blog/overview-various-scan-methods-postgresql/)
