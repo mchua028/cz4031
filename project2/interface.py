@@ -4,7 +4,7 @@ from tkinter import messagebox, ttk
 from typing import Optional
 
 import psycopg
-from annotation import get_annotation
+from annotation import get_annotation, get_visualization
 
 from preprocessing import QueryPlanTree
 
@@ -97,7 +97,7 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
         if kwargs.get("qptree") is None:
             self.visualize_query_plan_label["text"] = ""
         else:
-            self.visualize_query_plan_label["text"] = kwargs["qptree"].get_visualization()
+            self.visualize_query_plan_label["text"] = get_visualization(kwargs["qptree"])
 
 class InputQueryFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):

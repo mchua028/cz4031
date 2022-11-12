@@ -130,3 +130,19 @@ def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_f
         on_annotation = "on result(s) from " + ", ".join(children_steps)
 
     return "".join(children_annotations) + f"\n\n{step}. Perform {node.info['Node Type']} {on_annotation}{reason}", step + 1
+
+def get_visualization(qptree: QueryPlanTree):
+    return _get_visualization_helper(qptree.root, 0)
+
+def _get_visualization_helper(node: Optional[QueryPlanTreeNode], level: int):
+    if node is None:
+        return ""
+
+    children_visualizations = []
+    for child in node.children:
+        child_visualization = _get_visualization_helper(child, level + 1)
+        if child_visualization == "":
+            continue
+        children_visualizations.append(f"\n{child_visualization}")
+
+    return f"{':   ' * level}-> {node.get_primary_info()}" + "".join(children_visualizations)

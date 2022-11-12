@@ -88,22 +88,6 @@ class QueryPlanTree:
 
 		return node
 
-	def get_visualization(self):
-		return QueryPlanTree._get_visualization_helper(self.root, 0)
-
-	@staticmethod
-	def _get_visualization_helper(node: Optional[QueryPlanTreeNode], level: int):
-		if node is None:
-			return ""
-
-		children_visualizations = []
-		for child in node.children:
-			child_visualization = QueryPlanTree._get_visualization_helper(child, level + 1)
-			if child_visualization == "":
-				continue
-			children_visualizations.append(f"\n{child_visualization}")
-
-		return f"{':   ' * level}-> {node.get_primary_info()}" + "".join(children_visualizations)
 
 def query_plan(query: str, cursor: psycopg.Cursor) -> dict:
 	cursor.execute(f"EXPLAIN (FORMAT JSON) {query}")
