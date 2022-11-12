@@ -1,5 +1,7 @@
 # CZ4031 - Project 2
 
+![Application GUI](./assets/application_gui.png)
+
 ## Installation Instructions
 
 There are several ways in which the project can be run, either via PyCharm IDE or via the command line.  
