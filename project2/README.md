@@ -69,13 +69,13 @@ pip install -r requirements.txt
 pip freeze > requirements.txt
 ```
 
-### Starting up the project
+### Running the project
 
 ```bash
 python ./project.py
 ```
 
-### Establishing connection with POSTGRES database
+#### Establishing connection with POSTGRES database
 
 Enter the following connection string into the `Postgres connection string` input
 
@@ -83,11 +83,11 @@ Enter the following connection string into the `Postgres connection string` inpu
 postgresql://<POSTGRES USERNAME>:<DATABASE PASSWORD>@localhost:5432/<DATABASE NAME>
 ```
 
-### Entering query
+#### Entering query
 
 The user's query can be entered into the textbox, and the results will be displayed upon clicking the `Analyze Query` button
 
-#### Sample Test
+### Sample Test
 
 The following sample test uses the `TPC-H` database as a source of data.
 
