@@ -69,7 +69,7 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
 
         self.top_label = tk.Label(self, text="Annotation", font=("Helvetica", 18, "bold"))
         self.top_label.grid(column=1, row=6, columnspan=5)
-        self.annotated_query_label = ttk.Label(self, wraplength=500, font=("Helvetica", 10), width=80, anchor="center")
+        self.annotated_query_label = ttk.Label(self, wraplength=600, font=("Helvetica", 9), width=90, anchor="center")
         self.annotated_query_label.grid(column=1, row=7, columnspan=5)
 
     def update_changes(self, *args, **kwargs):
