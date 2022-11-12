@@ -149,6 +149,9 @@ class ConnectionFrame(ttk.Frame, Updatable):
         self.connect_button = ttk.Button(self, text="Connect", command=self.connect)
         self.connect_button.grid(column=2, row=0)
 
+        self.connection_status = tk.Label(self, text="Not Connected", foreground="red")
+        self.connection_status.grid(column=3, row=0)
+
         self.ctx = ctx
 
     def connect(self):
@@ -156,9 +159,13 @@ class ConnectionFrame(ttk.Frame, Updatable):
             conninfo = self.connection_text.get()
             self.ctx.cursor = psycopg.connect(conninfo).cursor()
             self.ctx.frames["input_query"].update_changes(disabled=False)
+            self.connection_status["text"] = "Connected"
+            self.connection_status["foreground"] = "green"
         except Exception as err:
             self.ctx.cursor = None
             self.ctx.frames["input_query"].update_changes(disabled=True)
+            self.connection_status["text"] = "Not Connected"
+            self.connection_status["foreground"] = "red"
             messagebox.showerror("Error", err)
 
     def update_changes(self, *args, **kwargs):
