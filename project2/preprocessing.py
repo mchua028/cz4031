@@ -97,11 +97,11 @@ class QueryPlanTree:
 				chosen_scan_cost=node.get_cost()
 			for type,cost in scan_choices.items():
 				if type!=node.info["Node Type"] and math.isclose(cost,chosen_scan_cost):
-					reason+=f"\n\tUsing {type} in AQP has similar costs as {node.info['Node Type']}. "
+					reason+=f"\n\tUsing {type} in AQP has similar costs as {node.info['Node Type']} in QEP. "
 				elif type!=node.info["Node Type"] and cost>chosen_scan_cost:
-					reason+=f"\n\tUsing {type} in AQP costs {round((cost-chosen_scan_cost)/chosen_scan_cost,2)}x more, which will result in increased cost of {round(cost-chosen_scan_cost,2)}."
+					reason+=f"\n\tUsing {type} in AQP costs {round((cost-chosen_scan_cost)/chosen_scan_cost,2)}x of cost in QEP (costs {round(cost-chosen_scan_cost,2)} more."
 				elif type!=node.info["Node Type"] and cost<chosen_scan_cost:
-					reason+=f"\n\tUsing {type} in AQP costs {round((chosen_scan_cost-cost)/chosen_scan_cost,2)}x less, which will result in cost savings of {round(chosen_scan_cost-cost,2)}."
+					reason+=f"\n\tUsing {type} in AQP costs {round((chosen_scan_cost-cost)/chosen_scan_cost,2)}x of cost in QEP (costs {round(chosen_scan_cost-cost,2)} less."
 
 			if len(scan_choices) <= 1:
 				reason+="\n\tThis is the only possible scan type among all AQPs. "
@@ -121,11 +121,11 @@ class QueryPlanTree:
 				if join_type == node.info["Node Type"]:
 					continue
 				if math.isclose(cost_scale, 1.0):
-					reason += f"\n\tUsing {join_type} in this AQP with equal cost as {join_type} in QEP."
+					reason += f"\n\tUsing {join_type} has similar costs as {join_type} in QEP."
 				elif cost_scale > 1.0:
-					reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x more, which will result in increased cost of {round(join_cost-cur_node_join_cost,2)}."
+					reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x of cost in QEP (costs {round(join_cost-cur_node_join_cost,2)} more."
 				else:
-					reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x less, which will result in cost savings of {round(cur_node_join_cost-join_cost,2)}."
+					reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x of cost in QEP (costs {round(cur_node_join_cost-join_cost,2)} less."
 		else:
 			on_annotation = "on result(s) from " + ", ".join(children_steps)
 
@@ -181,16 +181,32 @@ def query_plan(query: str, cursor: psycopg.Cursor) -> dict:
 	return cursor.fetchone()[0][0]["Plan"]
 
 def alternative_query_plans(query: str, cursor: psycopg.Cursor):
-	for disabled_scan_types, disabled_join_types in product(
-		combinations(SCAN_TYPE_FLAGS, len(SCAN_TYPE_FLAGS) - 1),
-		combinations(JOIN_TYPE_FLAGS, len(JOIN_TYPE_FLAGS) - 1),
-	):
-		# Enforce single scan type and single join type
+	# for disabled_scan_types, disabled_join_types in product(
+	# 	combinations(SCAN_TYPE_FLAGS, len(SCAN_TYPE_FLAGS) - 1),
+	# 	combinations(JOIN_TYPE_FLAGS, len(JOIN_TYPE_FLAGS) - 1),
+	# ):
+	# 	# Enforce single scan type and single join type
+	# 	for disabled_type in disabled_scan_types + disabled_join_types:
+	# 		cursor.execute(f"SET LOCAL enable_{disabled_type}=false")
+
+	# 	yield query_plan(query, cursor)
+	# 	cursor.connection.rollback()
+	disabled_types =[]
+	for i in range(1,len(SCAN_TYPE_FLAGS)):
+		for j in range(1,len(JOIN_TYPE_FLAGS)):
+			disabled_types.extend(product(
+				combinations(SCAN_TYPE_FLAGS, len(SCAN_TYPE_FLAGS) - i),
+				combinations(JOIN_TYPE_FLAGS, len(JOIN_TYPE_FLAGS) - j),
+			))
+	distinct_aqps=[]
+	for disabled_scan_types, disabled_join_types in disabled_types:
 		for disabled_type in disabled_scan_types + disabled_join_types:
 			cursor.execute(f"SET LOCAL enable_{disabled_type}=false")
-
-		yield query_plan(query, cursor)
+		aqp_plan=query_plan(query, cursor)
+		if aqp_plan not in distinct_aqps:
+			distinct_aqps.append(aqp_plan)
 		cursor.connection.rollback()
+	return distinct_aqps
 
 def alternative_query_plan_trees(query: str, cursor: psycopg.Cursor):
 	for plan in alternative_query_plans(query, cursor):
