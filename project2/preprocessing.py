@@ -1,6 +1,6 @@
 from typing import Optional, Self
 import psycopg
-
+import math
 from itertools import combinations, product
 
 SCAN_TYPES = {"Bitmap Heap Scan", "Bitmap Index Scan", "Index Scan", "Index Only Scan", "Seq Scan", "Tid Scan"}
@@ -68,25 +68,32 @@ class QueryPlanTree:
 		return qptree
 
 	def get_annotation(self,query: str,cursor:psycopg.Cursor):
-		aqps:list[QueryPlanTree] = alternative_query_plan_trees(query,cursor)
+
+		aqps:list[QueryPlanTree] = list(alternative_query_plan_trees(query,cursor))
 		scans_from_aqps:dict[str,dict[str,float]] = collect_scans_from_aqp_trees(aqps)
-		return QueryPlanTree._get_annotation_helper(self.root, 1, scans_from_aqps)[0]
+		joins_from_aqps:dict[str,dict[str,float]] = collect_joins_from_aqp_trees(aqps)
+		return QueryPlanTree._get_annotation_helper(self.root, 1, scans_from_aqps, joins_from_aqps)[0]
 
 	@staticmethod
-	def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_from_aqps:dict[str,dict[str,float]]):
+	def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_from_aqps:dict[str,dict[str,float]], joins_from_aqps:dict[str,dict[str,float]]):
 		if node is None:
 			return "", step
 
 		children_annotations = []
+		children_steps = []
 		for child in node.children:
-			child_annotation, step = QueryPlanTree._get_annotation_helper(child, step, scans_from_aqps)
+			child_annotation, step = QueryPlanTree._get_annotation_helper(child, step, scans_from_aqps, joins_from_aqps)
+			if child_annotation == "":
+				continue
 			children_annotations.append(child_annotation)
+			children_steps.append(f"({step - 1})")
 
 		on_annotation = ""
 		reason = ""
+
 		if node.info["Node Type"] in SCAN_TYPES and node.info["Node Type"] != "Bitmap Index Scan":
 			relation=str(next(iter(node.involving_relations)))
-			on_annotation += f" on {relation}. "
+			on_annotation += f"on {relation}."
 			more_costly_scans:dict[str,float] = {}
 			less_costly_scans:dict[str,float] = {}
 			scan_choices=scans_from_aqps.get(relation)
@@ -98,19 +105,39 @@ class QueryPlanTree:
 				if type!=node.info["Node Type"] and cost>chosen_scan_cost:
 					more_costly_scans[type]=round((cost-chosen_scan_cost)/chosen_scan_cost,2)
 				elif type!=node.info["Node Type"] and cost<chosen_scan_cost:
-					more_costly_scans[type]=round((chosen_scan_cost-cost)/chosen_scan_cost,2)
+					less_costly_scans[type]=round((chosen_scan_cost-cost)/chosen_scan_cost,2)
 
 			if len(more_costly_scans)!=0:
 				for type,cost in more_costly_scans.items():
-					reason+=f"Using {type} costs {cost}x more. "
+					reason+=f"\n\tUsing {type} costs {cost}x more. "
 			elif not(len(scan_choices)>1):
-				reason+="This is the only possible scan type among all AQPs. "
+				reason+="\n\tThis is the only possible scan type among all AQPs. "
 			else:
 				for type,cost in less_costly_scans.items():
-					reason+=f"Using {type} costs {cost}x less. "
+					reason+=f"\n\tUsing {type} costs {cost}x less. "
 				reason+="These cost savings are negligible. "
+		elif node.info["Node Type"] in JOIN_TYPES:
+			relation_key = " ".join(
+				sorted(map(lambda rel: str(rel), node.involving_relations))
+			)
+			on_annotation = "on result from " + ", ".join(children_steps)
+			aqp_join_types_dict = {}
+			aqp_join_types_dict = joins_from_aqps.get(relation_key)
+			join_type = node.info["Node Type"]
+			cur_node_join_cost = node.get_cost()
 
-		return "".join(children_annotations) + f"\n{step}. Perform {node.info['Node Type']}{on_annotation}{reason}", step + 1
+			for join_type, join_cost in aqp_join_types_dict.items():
+				cost_scale = round(join_cost/ cur_node_join_cost, 2)
+				if join_type == node.info["Node Type"]:
+					continue
+				elif math.isclose(cost_scale, 1.0) or (cost_scale < 1.0):
+					reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x more."
+				elif math.isclose(cost_scale, 1.0):
+					reason += f"\n\tUsing {join_type} in this AQP with equal cost as {join_type} in QEP."
+				else:
+					reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x less."
+
+		return "".join(children_annotations) + f"\n{step}. Perform {node.info['Node Type']} {on_annotation}{reason}", step + 1
 
 	def _build(self, plan: dict):
 		# Post-order traversal
@@ -192,7 +219,6 @@ def collect_joins_from_aqp_trees(aqp_trees: list[QueryPlanTree]) -> dict[str, di
 			cost = node.get_cost()
 			if node_type not in result[relations_key] or cost < result[relations_key][node_type]:
 				result[relations_key][node_type] = cost
-
 	return result
 
 def collect_scans_from_aqp_trees(aqp_trees: list[QueryPlanTree]) -> dict[str, dict[str, float]]:
