@@ -4,6 +4,7 @@ from tkinter import messagebox, ttk
 from typing import Optional
 
 import psycopg
+from annotation import get_annotation, get_visualization
 
 from preprocessing import QueryPlanTree
 
@@ -22,7 +23,7 @@ class App(tk.Tk):
 
         self.canvas = tk.Canvas(self.container)
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
-        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)   
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
 
         self.scroll_bar = ttk.Scrollbar(self.container, orient="vertical", command=self.canvas.yview)
         self.scroll_bar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -80,7 +81,7 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         if kwargs.get("qptree") is None:
             self.annotated_query_label["text"] = ""
         else:
-            self.annotated_query_label["text"] = kwargs["qptree"].get_annotation(self.ctx.cursor)
+            self.annotated_query_label["text"] = get_annotation(kwargs["qptree"], self.ctx.cursor)
 
 class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
@@ -96,7 +97,7 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
         if kwargs.get("qptree") is None:
             self.visualize_query_plan_label["text"] = ""
         else:
-            self.visualize_query_plan_label["text"] = kwargs["qptree"].get_visualization()
+            self.visualize_query_plan_label["text"] = get_visualization(kwargs["qptree"])
 
 class InputQueryFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
