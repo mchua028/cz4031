@@ -107,7 +107,7 @@ class QueryPlanTree:
 				elif type!=node.info["Node Type"] and cost<chosen_scan_cost:
 					reason+=f"\n\tUsing {type} in AQP costs {round((chosen_scan_cost-cost)/chosen_scan_cost,2)}x less."
 
-			if not(len(scan_choices)>1):
+			if len(scan_choices) <= 1:
 				reason+="\n\tThis is the only possible scan type among all AQPs. "
 		
 		elif node.info["Node Type"] in JOIN_TYPES:
