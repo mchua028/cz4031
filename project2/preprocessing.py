@@ -109,7 +109,7 @@ class QueryPlanTree:
 
 			if len(scan_choices) <= 1:
 				reason+="\n\tThis is the only possible scan type among all AQPs. "
-		
+
 		elif node.info["Node Type"] in JOIN_TYPES:
 			relation_key = " ".join(
 				sorted(map(lambda rel: str(rel), node.involving_relations))
