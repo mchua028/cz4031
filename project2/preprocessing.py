@@ -120,7 +120,7 @@ class QueryPlanTree:
 			relation_key = " ".join(
 				sorted(map(lambda rel: str(rel), node.involving_relations))
 			)
-			on_annotation = "on result from " + ", ".join(children_steps)
+			on_annotation = "on result(s) from " + ", ".join(children_steps)
 			aqp_join_types_dict = {}
 			aqp_join_types_dict = joins_from_aqps.get(relation_key)
 			join_type = node.info["Node Type"]
@@ -136,6 +136,8 @@ class QueryPlanTree:
 					reason += f"\n\tUsing {join_type} in this AQP with equal cost as {join_type} in QEP."
 				else:
 					reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x less."
+		else:
+			on_annotation = "on result(s) from " + ", ".join(children_steps)
 
 		return "".join(children_annotations) + f"\n{step}. Perform {node.info['Node Type']} {on_annotation}{reason}", step + 1
 
