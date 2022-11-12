@@ -76,7 +76,7 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         if kwargs.get("qptree") is None:
             self.annotated_query_label["text"] = ""
         else:
-            self.annotated_query_label["text"] = kwargs["qptree"].get_annotation(kwargs.get("query"),self.ctx.cursor)
+            self.annotated_query_label["text"] = kwargs["qptree"].get_annotation(self.ctx.cursor)
 
 class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
