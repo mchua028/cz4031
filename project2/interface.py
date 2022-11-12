@@ -43,11 +43,11 @@ class App(tk.Tk):
         self.ctx.frames["input_query"] = self.input_query_frame
 
         self.annotated_query_frame = AnnotatedQueryFrame(self.main_frame, self.ctx)
-        self.annotated_query_frame.grid(column=0, row=2, columnspan=3)
+        self.annotated_query_frame.grid(column=0, row=2, columnspan=3,sticky='n')
         self.ctx.frames["annotated_query"] = self.annotated_query_frame
 
         self.visualize_query_plan_frame = VisualizeQueryPlanFrame(self.main_frame, self.ctx)
-        self.visualize_query_plan_frame.grid(column=3, row=2, columnspan=3)
+        self.visualize_query_plan_frame.grid(column=3, row=2, columnspan=3,sticky='n')
         self.ctx.frames["visualize_query_plan"] = self.visualize_query_plan_frame
 
     def _on_mousewheel(self, event):
@@ -74,7 +74,7 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
         self.top_label = tk.Label(self, text="Annotation", font=("Helvetica", 18, "bold"))
         self.top_label.grid(column=1, row=6, columnspan=5)
         self.annotated_query_label = ttk.Label(self, wraplength=600, font=("Helvetica", 10), width=90, anchor="center")
-        self.annotated_query_label.grid(column=1, row=7, columnspan=5)
+        self.annotated_query_label.grid(column=1, row=7, columnspan=5,sticky='n')
 
     def update_changes(self, *args, **kwargs):
         if kwargs.get("qptree") is None:
@@ -90,7 +90,7 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
         self.top_label = tk.Label(self, text="Visualization", font=("Helvetica", 18, "bold"))
         self.top_label.grid(column=7, row=6, columnspan=5)
         self.visualize_query_plan_label = ttk.Label(self, wraplength=500, font=("Helvetica", 10), width=70, anchor="center")
-        self.visualize_query_plan_label.grid(column=7, row=7, columnspan=5)
+        self.visualize_query_plan_label.grid(column=7, row=7, columnspan=5,sticky='n')
 
     def update_changes(self, *args, **kwargs):
         if kwargs.get("qptree") is None:

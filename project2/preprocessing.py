@@ -160,7 +160,7 @@ class QueryPlanTree:
 		return node
 
 	def get_visualization(self):
-		return QueryPlanTree._get_visualization_helper(self.root, 0)
+		return "\n\n"+QueryPlanTree._get_visualization_helper(self.root, 0)
 
 	@staticmethod
 	def _get_visualization_helper(node: Optional[QueryPlanTreeNode], level: int):
