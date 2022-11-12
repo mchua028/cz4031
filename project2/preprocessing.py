@@ -68,7 +68,7 @@ class QueryPlanTree:
 		aqps: list[QueryPlanTree] = list(alternative_query_plan_trees(self.query, cursor))
 		scans_from_aqps: dict[str,dict[str,float]] = collect_scans_from_aqp_trees(aqps)
 		joins_from_aqps: dict[str,dict[str,float]] = collect_joins_from_aqp_trees(aqps)
-		return QueryPlanTree._get_annotation_helper(self.root, 1, scans_from_aqps, joins_from_aqps)[0]
+		return QueryPlanTree._get_annotation_helper(self.root, 1, scans_from_aqps, joins_from_aqps)[0]+"\n\nNote: Costs shown are estimated costs rather than actual runtime costs."
 
 	@staticmethod
 	def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_from_aqps:dict[str,dict[str,float]], joins_from_aqps:dict[str,dict[str,float]]):

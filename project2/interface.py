@@ -12,7 +12,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.geometry("1280x800")
+        self.geometry("1280x600")
         self.title("Query Analyzer")
         self.resizable(False, False)
         self.ctx = Context()
@@ -69,7 +69,7 @@ class AnnotatedQueryFrame(ttk.Frame, Updatable):
 
         self.top_label = tk.Label(self, text="Annotation", font=("Helvetica", 18, "bold"))
         self.top_label.grid(column=1, row=6, columnspan=5)
-        self.annotated_query_label = ttk.Label(self, wraplength=600, font=("Helvetica", 9), width=90, anchor="center")
+        self.annotated_query_label = ttk.Label(self, wraplength=600, font=("Helvetica", 10), width=90, anchor="center")
         self.annotated_query_label.grid(column=1, row=7, columnspan=5)
 
     def update_changes(self, *args, **kwargs):
@@ -85,7 +85,7 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
 
         self.top_label = tk.Label(self, text="Visualization", font=("Helvetica", 18, "bold"))
         self.top_label.grid(column=7, row=6, columnspan=5)
-        self.visualize_query_plan_label = ttk.Label(self, wraplength=500, font=("Helvetica", 10), width=80, anchor="center")
+        self.visualize_query_plan_label = ttk.Label(self, wraplength=500, font=("Helvetica", 10), width=70, anchor="center")
         self.visualize_query_plan_label.grid(column=7, row=7, columnspan=5)
 
     def update_changes(self, *args, **kwargs):
@@ -170,3 +170,4 @@ class ConnectionFrame(ttk.Frame, Updatable):
 
     def update_changes(self, *args, **kwargs):
         pass
+    
