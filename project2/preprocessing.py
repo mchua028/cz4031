@@ -94,28 +94,22 @@ class QueryPlanTree:
 		if node.info["Node Type"] in SCAN_TYPES and node.info["Node Type"] != "Bitmap Index Scan":
 			relation=str(next(iter(node.involving_relations)))
 			on_annotation += f"on {relation}."
-			more_costly_scans:dict[str,float] = {}
-			less_costly_scans:dict[str,float] = {}
 			scan_choices=scans_from_aqps.get(relation)
 			if node.info["Node Type"]=="Bitmap Heap Scan":
 				chosen_scan_cost=scan_choices.get("Bitmap Scan")
 			else:
-				chosen_scan_cost=scan_choices.get(node.info["Node Type"])
+				chosen_scan_cost=node.get_cost()
 			for type,cost in scan_choices.items():
-				if type!=node.info["Node Type"] and cost>chosen_scan_cost:
-					more_costly_scans[type]=round((cost-chosen_scan_cost)/chosen_scan_cost,2)
+				if type!=node.info["Node Type"] and math.isclose(cost,chosen_scan_cost):
+					reason+=f"\n\tUsing {type} in AQP has similar costs as {node.info['Node Type']}. "
+				elif type!=node.info["Node Type"] and cost>chosen_scan_cost:
+					reason+=f"\n\tUsing {type} in AQP costs {round((cost-chosen_scan_cost)/chosen_scan_cost,2)}x more."
 				elif type!=node.info["Node Type"] and cost<chosen_scan_cost:
-					less_costly_scans[type]=round((chosen_scan_cost-cost)/chosen_scan_cost,2)
+					reason+=f"\n\tUsing {type} in AQP costs {round((chosen_scan_cost-cost)/chosen_scan_cost,2)}x less."
 
-			if len(more_costly_scans)!=0:
-				for type,cost in more_costly_scans.items():
-					reason+=f"\n\tUsing {type} costs {cost}x more. "
-			elif not(len(scan_choices)>1):
+			if len(scan_choices) <= 1:
 				reason+="\n\tThis is the only possible scan type among all AQPs. "
-			else:
-				for type,cost in less_costly_scans.items():
-					reason+=f"\n\tUsing {type} costs {cost}x less. "
-				reason+="These cost savings are negligible. "
+
 		elif node.info["Node Type"] in JOIN_TYPES:
 			relation_key = " ".join(
 				sorted(map(lambda rel: str(rel), node.involving_relations))
@@ -139,7 +133,7 @@ class QueryPlanTree:
 		else:
 			on_annotation = "on result(s) from " + ", ".join(children_steps)
 
-		return "".join(children_annotations) + f"\n{step}. Perform {node.info['Node Type']} {on_annotation}{reason}", step + 1
+		return "".join(children_annotations) + f"\n\n{step}. Perform {node.info['Node Type']} {on_annotation}{reason}", step + 1
 
 	def _build(self, plan: dict):
 		# Post-order traversal
