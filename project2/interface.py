@@ -22,6 +22,7 @@ class App(tk.Tk):
 
         self.canvas = tk.Canvas(self.container)
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)   
 
         self.scroll_bar = ttk.Scrollbar(self.container, orient="vertical", command=self.canvas.yview)
         self.scroll_bar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -48,6 +49,9 @@ class App(tk.Tk):
         self.visualize_query_plan_frame = VisualizeQueryPlanFrame(self.main_frame, self.ctx)
         self.visualize_query_plan_frame.grid(column=3, row=2, columnspan=3)
         self.ctx.frames["visualize_query_plan"] = self.visualize_query_plan_frame
+
+    def _on_mousewheel(self, event):
+        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
 
 class Updatable(ABC):
     @abstractmethod
