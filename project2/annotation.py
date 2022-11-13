@@ -14,7 +14,7 @@ def get_annotation(qptree: QueryPlanTree, cursor:psycopg.Cursor):
     aqps: list[QueryPlanTree] = list(alternative_query_plan_trees(qptree.query, cursor))
     scans_from_aqps: dict[str,dict[str,float]] = collect_scans_from_aqp_trees(aqps)
     joins_from_aqps: dict[str,dict[str,float]] = collect_joins_from_aqp_trees(aqps)
-    return _get_annotation_helper(qptree.root, 1, scans_from_aqps, joins_from_aqps)[0]+"\n\nNote: Costs shown are estimated costs rather than actual runtime costs."
+    return _get_annotation_helper(qptree.root, 1, scans_from_aqps, joins_from_aqps)[0]+f"\n\nTotal cost of QEP={qptree.root.info['Total Cost']}.\nMinimum total cost across all AQPs={min(map(lambda aqp: aqp.root.info['Total Cost'], aqps))}.\n\nNote: Costs shown are estimated costs rather than actual runtime costs."
 
 def get_visualization(qptree: QueryPlanTree):
     return "\n\n" + _get_visualization_helper(qptree.root, 0)
@@ -44,14 +44,21 @@ def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_f
         else:
             chosen_scan_cost = node.get_cost()
         for node_type, cost in scan_choices.items():
-            cost_diff = abs(cost - chosen_scan_cost)
-            cost_diff_ratio = cost_diff / chosen_scan_cost
-            if node_type != node.info["Node Type"] and math.isclose(cost, chosen_scan_cost):
-                reason += f"\n\tUsing {node_type} in AQP has similar costs as {node.info['Node Type']}. "
-            elif node_type != node.info["Node Type"] and cost > chosen_scan_cost:
-                reason += f"\n\tUsing {node_type} in AQP costs {round(cost_diff_ratio, 2)}x more, which will result in increased cost of {round(cost_diff, 2)}."
-            elif node_type != node.info["Node Type"] and cost < chosen_scan_cost:
-                reason += f"\n\tUsing {node_type} in AQP costs {round(cost_diff_ratio, 2)}x less, which will result in cost savings of {round(cost_diff, 2)}."
+            if chosen_scan_cost==0:
+                if cost>chosen_scan_cost:
+                    reason+=f"\n\tCost of using {node_type} is {round(cost-chosen_scan_cost,2)} more than the cost of using {node.info['Node Type']}."
+                else:
+                    reason+=f"\n\tCost of using {node_type} is similar to cost of using {node.info['Node Type']}. "
+                continue
+            cost_ratio = round(cost / chosen_scan_cost,2)
+            if node_type==node.info["Node Type"]:
+                continue
+            if math.isclose(cost_ratio,1.0):
+                reason+=f"\n\tCost of using {node_type} is similar to cost of using {node.info['Node Type']}. "
+            elif cost_ratio>1.0:
+                reason+=f"\n\tCost of using {node_type} is {cost_ratio}x the cost of using {node.info['Node Type']} (costs {round(cost-chosen_scan_cost,2)} more)."
+            else:
+                reason+=f"\n\tCost of using {node_type} is {cost_ratio}x the cost of using {node.info['Node Type']} (costs {round(chosen_scan_cost-cost,2)} less)."
 
         if len(scan_choices) <= 1:
             reason += "\n\tThis is the only possible scan type among all AQPs. "
@@ -67,15 +74,21 @@ def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_f
         cur_node_join_cost = node.get_cost()
 
         for join_type, join_cost in aqp_join_types_dict.items():
+            if cur_node_join_cost==0:
+                if join_cost>cur_node_join_cost:
+                    reason+=f"\n\tCost of using {join_type} is {round(join_cost-cur_node_join_cost,2)} more than the cost of using {node.info['Node Type']}."
+                else:
+                    reason+=f"\n\tCost of using {join_type} is similar to cost of using {node.info['Node Type']}. "
+                continue
             cost_scale = round(join_cost / cur_node_join_cost, 2)
             if join_type == node.info["Node Type"]:
                 continue
             if math.isclose(cost_scale, 1.0):
-                reason += f"\n\tUsing {join_type} in this AQP with equal cost as {join_type} in QEP."
+                reason += f"\n\tCost of using {join_type} is similar to cost of using {node.info['Node Type']}."
             elif cost_scale > 1.0:
-                reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x more, which will result in increased cost of {round(join_cost-cur_node_join_cost,2)}."
+                reason += f"\n\tCost of using {join_type} is {cost_scale}x the cost of using {node.info['Node Type']} (costs {round(join_cost-cur_node_join_cost,2)} more)."
             else:
-                reason += f"\n\tUsing {join_type} in AQP costs {cost_scale}x less, which will result in cost savings of {round(cur_node_join_cost-join_cost,2)}."
+                reason += f"\n\tCost of using {join_type} is {cost_scale}x the cost of using {node.info['Node Type']} (costs {round(cur_node_join_cost-join_cost,2)} less)."
     else:
         on_annotation = "on result(s) from " + ", ".join(children_steps)
 
@@ -101,56 +114,62 @@ def _get_visualization_helper(node: Optional[QueryPlanTreeNode], level: int):
     return f"{':   ' * level}-> {node_type}{on_annotation}" + "".join(children_visualizations)
 
 def alternative_query_plans(query: str, cursor: psycopg.Cursor):
-	for disabled_scan_types, disabled_join_types in product(
-		combinations(SCAN_TYPE_FLAGS, len(SCAN_TYPE_FLAGS) - 1),
-		combinations(JOIN_TYPE_FLAGS, len(JOIN_TYPE_FLAGS) - 1),
-	):
-		# Enforce single scan type and single join type
-		for disabled_type in disabled_scan_types + disabled_join_types:
-			cursor.execute(f"SET LOCAL enable_{disabled_type}=false")
-
-		yield query_plan(query, cursor)
-		cursor.connection.rollback()
+    disabled_types =[]
+    for i in range(0,len(SCAN_TYPE_FLAGS)+1):
+        for j in range(0,len(JOIN_TYPE_FLAGS)+1):
+            disabled_types.extend(product(
+                combinations(SCAN_TYPE_FLAGS, len(SCAN_TYPE_FLAGS) - i),
+                combinations(JOIN_TYPE_FLAGS, len(JOIN_TYPE_FLAGS) - j),
+            ))
+    distinct_aqps=[]
+    for disabled_scan_types, disabled_join_types in disabled_types:
+        for disabled_type in disabled_scan_types + disabled_join_types:
+            cursor.execute(f"SET LOCAL enable_{disabled_type}=false")
+        aqp_plan=query_plan(query, cursor)
+        if aqp_plan not in distinct_aqps:
+            distinct_aqps.append(aqp_plan)
+        cursor.connection.rollback()
+    return distinct_aqps
 
 def alternative_query_plan_trees(query: str, cursor: psycopg.Cursor):
-	for plan in alternative_query_plans(query, cursor):
-		yield QueryPlanTree.from_plan(plan, query)
+    for plan in alternative_query_plans(query, cursor):
+        yield QueryPlanTree.from_plan(plan, query)
 
 def collect_joins_from_aqp_trees(aqp_trees: list[QueryPlanTree]) -> dict[str, dict[str, float]]:
-	result = {}
-	for tree in aqp_trees:
-		for node in tree.join_nodes:
-			relations_key = " ".join(
-				# Sorting is required as the relations may not be in order
-				sorted(map(lambda rel: str(rel), node.involving_relations))
-			)
-			if relations_key not in result:
-				result[relations_key] = {}
+    result = {}
+    for tree in aqp_trees:
+        for node in tree.join_nodes:
+            relations_key = " ".join(
+                # Sorting is required as the relations may not be in order
+                sorted(map(lambda rel: str(rel), node.involving_relations))
+            )
+            if relations_key not in result:
+                result[relations_key] = {}
 
-			node_type = node.info["Node Type"]
-			cost = node.get_cost()
-			if node_type not in result[relations_key] or cost < result[relations_key][node_type]:
-				result[relations_key][node_type] = cost
-	return result
+            node_type = node.info["Node Type"]
+            cost = node.get_cost()
+            if node_type not in result[relations_key] or cost < result[relations_key][node_type]:
+                result[relations_key][node_type] = cost
+    return result
 
 def collect_scans_from_aqp_trees(aqp_trees: list[QueryPlanTree]) -> dict[str, dict[str, float]]:
-	result = {}
-	for tree in aqp_trees:
-		for node in tree.scan_nodes:
-			node_type = node.info["Node Type"]
-			if node_type == "Bitmap Index Scan":
-				continue
-			if node_type == "Bitmap Heap Scan":
-				node_type = "Bitmap Scan"
-			relations_key = " ".join(
-				# Sorting is required as the relations may not be in order
-				sorted(map(lambda rel: str(rel), node.involving_relations))
-			)
+    result = {}
+    for tree in aqp_trees:
+        for node in tree.scan_nodes:
+            node_type = node.info["Node Type"]
+            if node_type == "Bitmap Index Scan":
+                continue
+            if node_type == "Bitmap Heap Scan":
+                node_type = "Bitmap Scan"
+            relations_key = " ".join(
+                # Sorting is required as the relations may not be in order
+                sorted(map(lambda rel: str(rel), node.involving_relations))
+            )
 
-			if relations_key not in result:
-				result[relations_key] = {}
-			cost = node.get_cost()
-			if node_type not in result[relations_key] or cost < result[relations_key][node_type]:
-				result[relations_key][node_type] = cost
+            if relations_key not in result:
+                result[relations_key] = {}
+            cost = node.get_cost()
+            if node_type not in result[relations_key] or cost < result[relations_key][node_type]:
+                result[relations_key][node_type] = cost
 
-	return result
+    return result
