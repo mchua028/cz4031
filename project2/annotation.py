@@ -114,62 +114,64 @@ def _get_visualization_helper(node: Optional[QueryPlanTreeNode], level: int):
     return f"{':   ' * level}-> {node_type}{on_annotation}" + "".join(children_visualizations)
 
 def alternative_query_plans(query: str, cursor: psycopg.Cursor):
-	disabled_types =[]
-	for i in range(0,len(SCAN_TYPE_FLAGS)):
-		for j in range(0,len(JOIN_TYPE_FLAGS)):
-			disabled_types.extend(product(
-				combinations(SCAN_TYPE_FLAGS, len(SCAN_TYPE_FLAGS) - i),
-				combinations(JOIN_TYPE_FLAGS, len(JOIN_TYPE_FLAGS) - j),
-			))
-	distinct_aqps=[]
-	for disabled_scan_types, disabled_join_types in disabled_types:
-		for disabled_type in disabled_scan_types + disabled_join_types:
-			cursor.execute(f"SET LOCAL enable_{disabled_type}=false")
-		aqp_plan=query_plan(query, cursor)
-		if aqp_plan not in distinct_aqps:
-			distinct_aqps.append(aqp_plan)
-		cursor.connection.rollback()
-	return distinct_aqps
+    disabled_types =[]
+    for i in range(0,len(SCAN_TYPE_FLAGS)+1):
+        for j in range(0,len(JOIN_TYPE_FLAGS)+1):
+            disabled_types.extend(product(
+                combinations(SCAN_TYPE_FLAGS, len(SCAN_TYPE_FLAGS) - i),
+                combinations(JOIN_TYPE_FLAGS, len(JOIN_TYPE_FLAGS) - j),
+            ))
+    distinct_aqps=[]
+    print(disabled_types)
+    print(len(disabled_types))
+    for disabled_scan_types, disabled_join_types in disabled_types:
+        for disabled_type in disabled_scan_types + disabled_join_types:
+            cursor.execute(f"SET LOCAL enable_{disabled_type}=false")
+        aqp_plan=query_plan(query, cursor)
+        if aqp_plan not in distinct_aqps:
+            distinct_aqps.append(aqp_plan)
+        cursor.connection.rollback()
+    return distinct_aqps
 
 def alternative_query_plan_trees(query: str, cursor: psycopg.Cursor):
-	for plan in alternative_query_plans(query, cursor):
-		yield QueryPlanTree.from_plan(plan, query)
+    for plan in alternative_query_plans(query, cursor):
+        yield QueryPlanTree.from_plan(plan, query)
 
 def collect_joins_from_aqp_trees(aqp_trees: list[QueryPlanTree]) -> dict[str, dict[str, float]]:
-	result = {}
-	for tree in aqp_trees:
-		for node in tree.join_nodes:
-			relations_key = " ".join(
-				# Sorting is required as the relations may not be in order
-				sorted(map(lambda rel: str(rel), node.involving_relations))
-			)
-			if relations_key not in result:
-				result[relations_key] = {}
+    result = {}
+    for tree in aqp_trees:
+        for node in tree.join_nodes:
+            relations_key = " ".join(
+                # Sorting is required as the relations may not be in order
+                sorted(map(lambda rel: str(rel), node.involving_relations))
+            )
+            if relations_key not in result:
+                result[relations_key] = {}
 
-			node_type = node.info["Node Type"]
-			cost = node.get_cost()
-			if node_type not in result[relations_key] or cost < result[relations_key][node_type]:
-				result[relations_key][node_type] = cost
-	return result
+            node_type = node.info["Node Type"]
+            cost = node.get_cost()
+            if node_type not in result[relations_key] or cost < result[relations_key][node_type]:
+                result[relations_key][node_type] = cost
+    return result
 
 def collect_scans_from_aqp_trees(aqp_trees: list[QueryPlanTree]) -> dict[str, dict[str, float]]:
-	result = {}
-	for tree in aqp_trees:
-		for node in tree.scan_nodes:
-			node_type = node.info["Node Type"]
-			if node_type == "Bitmap Index Scan":
-				continue
-			if node_type == "Bitmap Heap Scan":
-				node_type = "Bitmap Scan"
-			relations_key = " ".join(
-				# Sorting is required as the relations may not be in order
-				sorted(map(lambda rel: str(rel), node.involving_relations))
-			)
+    result = {}
+    for tree in aqp_trees:
+        for node in tree.scan_nodes:
+            node_type = node.info["Node Type"]
+            if node_type == "Bitmap Index Scan":
+                continue
+            if node_type == "Bitmap Heap Scan":
+                node_type = "Bitmap Scan"
+            relations_key = " ".join(
+                # Sorting is required as the relations may not be in order
+                sorted(map(lambda rel: str(rel), node.involving_relations))
+            )
 
-			if relations_key not in result:
-				result[relations_key] = {}
-			cost = node.get_cost()
-			if node_type not in result[relations_key] or cost < result[relations_key][node_type]:
-				result[relations_key][node_type] = cost
+            if relations_key not in result:
+                result[relations_key] = {}
+            cost = node.get_cost()
+            if node_type not in result[relations_key] or cost < result[relations_key][node_type]:
+                result[relations_key][node_type] = cost
 
-	return result
+    return result
