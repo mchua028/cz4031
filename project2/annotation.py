@@ -1,6 +1,7 @@
 import math
 from itertools import combinations, product
 from typing import Optional
+import graphviz
 
 import psycopg
 
@@ -17,7 +18,9 @@ def get_annotation(qptree: QueryPlanTree, cursor:psycopg.Cursor):
     return _get_annotation_helper(qptree.root, 1, scans_from_aqps, joins_from_aqps)[0]+"\n\nNote: Costs shown are estimated costs rather than actual runtime costs."
 
 def get_visualization(qptree: QueryPlanTree):
-    return "\n\n" + _get_visualization_helper(qptree.root, 0)
+    gv = graphviz.Digraph()
+    _get_visualization_helper(qptree.root, gv, 1)
+    return gv.render(format="png", view=False)
 
 def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_from_aqps:dict[str,dict[str,float]], joins_from_aqps:dict[str,dict[str,float]]):
     if node is None:
@@ -82,23 +85,26 @@ def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_f
     return "".join(children_annotations) + f"\n\n{step}. Perform {node.info['Node Type']} {on_annotation}{reason}", step + 1
 
 
-def _get_visualization_helper(node: Optional[QueryPlanTreeNode], level: int):
+def _get_visualization_helper(node: Optional[QueryPlanTreeNode], gv: graphviz.Digraph, step: int):
     if node is None:
-        return ""
+        return "", step
 
-    children_visualizations = []
+    children_ids = []
     for child in node.children:
-        child_visualization = _get_visualization_helper(child, level + 1)
-        if child_visualization == "":
+        child_label, step = _get_visualization_helper(child, gv, step)
+        if child_label == "":
             continue
-        children_visualizations.append(f"\n{child_visualization}")
+        gv.node(f"{step - 1}", child_label)
+        children_ids.append(step - 1)
 
-    on_annotation = ""
     node_type = node.info["Node Type"]
-    if node_type in SCAN_TYPES and node_type != "Bitmap Index Scan":
-        on_annotation = f" on {str(next(iter(node.involving_relations)))}"
+    label = f"({step}) {node_type}"
+    gv.node(str(step), label)
 
-    return f"{':   ' * level}-> {node_type}{on_annotation}" + "".join(children_visualizations)
+    for child_id in children_ids:
+        gv.edge(str(step), str(child_id))
+
+    return label, step + 1
 
 def alternative_query_plans(query: str, cursor: psycopg.Cursor):
 	for disabled_scan_types, disabled_join_types in product(
