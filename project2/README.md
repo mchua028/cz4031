@@ -7,7 +7,7 @@
 - Python >= 3.11.0
 - PostgresSQL >= 15
 - Database set up in PostgresSQL
-- Graphviz
+- Graphviz == 7.0.1
 
 ## Graphviz Setup
 
