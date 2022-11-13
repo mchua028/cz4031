@@ -122,8 +122,6 @@ def alternative_query_plans(query: str, cursor: psycopg.Cursor):
                 combinations(JOIN_TYPE_FLAGS, len(JOIN_TYPE_FLAGS) - j),
             ))
     distinct_aqps=[]
-    print(disabled_types)
-    print(len(disabled_types))
     for disabled_scan_types, disabled_join_types in disabled_types:
         for disabled_type in disabled_scan_types + disabled_join_types:
             cursor.execute(f"SET LOCAL enable_{disabled_type}=false")
