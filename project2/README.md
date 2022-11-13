@@ -69,7 +69,11 @@ Enter query into the textbox, and the results will be displayed upon clicking th
 
 The following sample test uses the `TPC-H` database as a source of data.
 
-1. Enter Query
+1. Enter Postgres Connection string  
+![Postgres Connection String](./assets/walkThroughSteps/ss1.png)  
+2. Click `Connect`  
+![Connect](./assets/walkThroughSteps/ss2.png)  
+3. Enter Query and click `Analyze Query`
 
 ```postgres
 SELECT customer.c_custkey
@@ -77,17 +81,15 @@ FROM (SELECT * FROM customer WHERE customer.c_custkey > 1) AS customer, nation, 
 WHERE customer.c_nationkey = nation.n_nationkey AND customer.c_custkey = orders.o_custkey
 ORDER BY customer.c_nationkey, nation.n_nationkey;
 ```
+![Enter Query and click Analyze Query](./assets/walkThroughSteps/ss3.png)  
 
-2. Click `Analyze Query`
-3. Annotation Results Display
+4. Annotation Results Display
+![Annotation Result Display](./assets/walkThroughSteps/ss4_1.png)  
 
-<img
-    style="display: block;
-           margin-left: auto;
-           margin-right: auto;"
-    src="./assets/sample_test_result.png"
-    alt="Our logo">
-</img>
+5. Generate graphical view of QueryPlanTree 
+![Click View QEP tree](./assets/walkThroughSteps/ss4_2.png)  
+![Sample Test Result](./assets/walkThroughSteps/ss_5.png)
+
 
 ### Additional Information
 
