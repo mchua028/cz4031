@@ -93,16 +93,6 @@ ORDER BY customer.c_nationkey, nation.n_nationkey;
 ![Sample Test Result](./assets/walkThroughSteps/ss_5.png)
 
 
-4. Click `View QEP tree`
-
-<img
-    style="display: block;
-           margin-left: auto;
-           margin-right: auto;"
-    src="./assets/sample_viz.png"
-    alt="Our logo">
-</img>
-
 ### Additional Information
 
 - [PostgresSQL Optimizer](https://www.postgresql.org/docs/current/planner-optimizer.html)
