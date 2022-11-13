@@ -110,8 +110,8 @@ def _get_visualization_helper(node: Optional[QueryPlanTreeNode], level: int):
 
 def alternative_query_plans(query: str, cursor: psycopg.Cursor):
 	disabled_types =[]
-	for i in range(1,len(SCAN_TYPE_FLAGS)):
-		for j in range(1,len(JOIN_TYPE_FLAGS)):
+	for i in range(0,len(SCAN_TYPE_FLAGS)):
+		for j in range(0,len(JOIN_TYPE_FLAGS)):
 			disabled_types.extend(product(
 				combinations(SCAN_TYPE_FLAGS, len(SCAN_TYPE_FLAGS) - i),
 				combinations(JOIN_TYPE_FLAGS, len(JOIN_TYPE_FLAGS) - j),
