@@ -92,6 +92,8 @@ def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_f
                 reason += f"\n\tCost of using {join_type} is {cost_scale}x the cost of using {node.info['Node Type']} (costs {round(join_cost-cur_node_join_cost,2)} more)."
             else:
                 reason += f"\n\tCost of using {join_type} is {cost_scale}x the cost of using {node.info['Node Type']} (costs {round(cur_node_join_cost-join_cost,2)} less)."
+    elif node.info["Node Type"] == "Bitmap Index Scan":
+        on_annotation = f"on {str(next(iter(node.involving_relations)))}"
     else:
         on_annotation = "on result(s) from " + ", ".join(children_steps)
 
