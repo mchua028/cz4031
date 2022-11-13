@@ -130,7 +130,7 @@ class InputQueryFrame(ttk.Frame, Updatable):
 
         qptree: Optional[QueryPlanTree] = None
         try:
-            qptree = QueryPlanTree.from_query(input_query, self.ctx.cursor)
+            qptree = QueryPlanTree.from_query(input_query, self.ctx.cursor,True)
         except Exception as err:
             messagebox.showerror("Error", err)
 

@@ -50,8 +50,8 @@ class QueryPlanTree:
 		self.query = query
 
 	@staticmethod
-	def from_query(query: str, cursor: psycopg.Cursor):
-		plan = query_plan(query, cursor)
+	def from_query(query: str, cursor: psycopg.Cursor,toAnalyze=False):
+		plan = query_plan(query, cursor,toAnalyze)
 		return QueryPlanTree.from_plan(plan, query)
 
 	@staticmethod
@@ -89,6 +89,10 @@ class QueryPlanTree:
 		return node
 
 
-def query_plan(query: str, cursor: psycopg.Cursor) -> dict:
-	cursor.execute(f"EXPLAIN (FORMAT JSON) {query}")
-	return cursor.fetchone()[0][0]["Plan"]
+def query_plan(query: str, cursor: psycopg.Cursor,toAnalyze:bool=False) -> dict:
+	if toAnalyze:
+		cursor.execute(f"EXPLAIN (FORMAT JSON,ANALYZE) {query}")
+		return cursor.fetchone()[0][0]["Plan"]
+	else:
+		cursor.execute(f"EXPLAIN (FORMAT JSON) {query}")
+		return cursor.fetchone()[0][0]["Plan"]

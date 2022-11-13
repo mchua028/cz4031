@@ -53,7 +53,7 @@ def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_f
                 else:
                     reason+=f"\n\tCost of using {node_type} is similar to cost of using {node.info['Node Type']}. "
                 continue
-            cost_ratio = round(cost / chosen_scan_cost,2)
+            cost_ratio = round(cost / chosen_scan_cost,4)
             if node_type==node.info["Node Type"]:
                 continue
             if math.isclose(cost_ratio,1.0):
@@ -83,7 +83,7 @@ def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_f
                 else:
                     reason+=f"\n\tCost of using {join_type} is similar to cost of using {node.info['Node Type']}. "
                 continue
-            cost_scale = round(join_cost / cur_node_join_cost, 2)
+            cost_scale = round(join_cost / cur_node_join_cost, 4)
             if join_type == node.info["Node Type"]:
                 continue
             if math.isclose(cost_scale, 1.0):
@@ -120,6 +120,16 @@ def _get_visualization_helper(node: Optional[QueryPlanTreeNode], gv: graphviz.Di
     return label, step + 1
 
 def alternative_query_plans(query: str, cursor: psycopg.Cursor):
+    # for disabled_scan_types, disabled_join_types in product(
+    #     combinations(SCAN_TYPE_FLAGS, len(SCAN_TYPE_FLAGS) - 1),
+    #     combinations(JOIN_TYPE_FLAGS, len(JOIN_TYPE_FLAGS) - 1),
+    # ):
+    #     # Enforce single scan type and single join type
+    #     for disabled_type in disabled_scan_types + disabled_join_types:
+    #         cursor.execute(f"SET LOCAL enable_{disabled_type}=false")
+
+    #     yield query_plan(query, cursor,True)
+    #     cursor.connection.rollback()
     disabled_types =[]
     for i in range(0,len(SCAN_TYPE_FLAGS)+1):
         for j in range(0,len(JOIN_TYPE_FLAGS)+1):
@@ -133,6 +143,7 @@ def alternative_query_plans(query: str, cursor: psycopg.Cursor):
             cursor.execute(f"SET LOCAL enable_{disabled_type}=false")
         aqp_plan=query_plan(query, cursor)
         if aqp_plan not in distinct_aqps:
+            aqp_plan=query_plan(query, cursor,True)
             distinct_aqps.append(aqp_plan)
         cursor.connection.rollback()
     return distinct_aqps
