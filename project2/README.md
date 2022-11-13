@@ -1,10 +1,29 @@
 # CZ4031 - Project 2
 
+![Application Gui](./assets/application_gui.png)
+
 ## Requirements
 
 - Python >= 3.11.0
 - PostgresSQL >= 15
 - Database set up in PostgresSQL
+- Graphviz == 7.0.1
+
+## Graphviz Setup
+
+Downloading Graphviz is necessary in order to view graphical representation of Query Plan Tree.
+1. Download [Graphviz](https://graphviz.org/download/)
+2. Unzip folder (can use [7ZIP](https://www.7-zip.org/download.html) to unzip folder)
+3. Move unzipped folder to `C:/Program Files (x86)`
+
+**NOTE**: In order for Graphviz to work, the user must configure the `PATH` environment variable. After configuring the `PATH` environment variable, a **restart** of the computer will be needed for the change to take effect
+
+- For user variable, add to environment variable `Path` the following: `C:\Program Files (x86)\Graphviz\bin`
+- For system variable, add to environment variable `Path` the following: `C:\Program Files (x86)\Graphviz\bin\dot.exe`
+- To test if change has been made, open up terminal and run
+```bash
+dot
+```
 
 ## Steps
 
