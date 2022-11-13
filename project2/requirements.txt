@@ -1,3 +1,4 @@
+graphviz==0.20.1
 psycopg==3.1.4
 psycopg-binary==3.1.4
 typing_extensions==4.4.0
