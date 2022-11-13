@@ -17,7 +17,7 @@ def get_annotation(qptree: QueryPlanTree, cursor:psycopg.Cursor):
     return _get_annotation_helper(qptree.root, 1, scans_from_aqps, joins_from_aqps)[0]+f"\n\nTotal cost of QEP={qptree.root.info['Total Cost']}.\nMinimum total cost across all AQPs={min(map(lambda aqp: aqp.root.info['Total Cost'], aqps))}.\n\nNote: Costs shown are estimated costs rather than actual runtime costs."
 
 def get_visualization(qptree: QueryPlanTree):
-    return "\n\n"+_get_visualization_helper(qptree.root, 0)
+    return "\n\n" + _get_visualization_helper(qptree.root, 0)
 
 def _get_annotation_helper(node: Optional[QueryPlanTreeNode], step: int, scans_from_aqps:dict[str,dict[str,float]], joins_from_aqps:dict[str,dict[str,float]]):
     if node is None:
@@ -106,7 +106,12 @@ def _get_visualization_helper(node: Optional[QueryPlanTreeNode], level: int):
             continue
         children_visualizations.append(f"\n{child_visualization}")
 
-    return f"{':   ' * level}-> {node.get_primary_info()}" + "".join(children_visualizations)
+    on_annotation = ""
+    node_type = node.info["Node Type"]
+    if node_type in SCAN_TYPES and node_type != "Bitmap Index Scan":
+        on_annotation = f" on {str(next(iter(node.involving_relations)))}"
+
+    return f"{':   ' * level}-> {node_type}{on_annotation}" + "".join(children_visualizations)
 
 def alternative_query_plans(query: str, cursor: psycopg.Cursor):
 	disabled_types =[]
