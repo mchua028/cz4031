@@ -12,6 +12,7 @@
 ## Graphviz Setup
 
 Downloading Graphviz is necessary in order to view graphical representation of Query Plan Tree.
+
 1. Download [Graphviz](https://graphviz.org/download/)
 2. Unzip folder (can use [7ZIP](https://www.7-zip.org/download.html) to unzip folder)
 3. Move unzipped folder to `C:/Program Files (x86)`
@@ -21,6 +22,7 @@ Downloading Graphviz is necessary in order to view graphical representation of Q
 - For user variable, add to environment variable `Path` the following: `C:\Program Files (x86)\Graphviz\bin`
 - For system variable, add to environment variable `Path` the following: `C:\Program Files (x86)\Graphviz\bin\dot.exe`
 - To test if change has been made, open up terminal and run
+
 ```bash
 dot
 ```
@@ -90,6 +92,16 @@ ORDER BY customer.c_nationkey, nation.n_nationkey;
 ![Click View QEP tree](./assets/walkThroughSteps/ss4_2.png)  
 ![Sample Test Result](./assets/walkThroughSteps/ss_5.png)
 
+
+4. Click `View QEP tree`
+
+<img
+    style="display: block;
+           margin-left: auto;
+           margin-right: auto;"
+    src="./assets/sample_viz.png"
+    alt="Our logo">
+</img>
 
 ### Additional Information
 
