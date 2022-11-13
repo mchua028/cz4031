@@ -7,7 +7,7 @@ import psycopg
 from annotation import get_annotation, get_visualization
 
 from preprocessing import QueryPlanTree
-
+from PIL import Image
 
 class App(tk.Tk):
     def __init__(self):
@@ -92,12 +92,23 @@ class VisualizeQueryPlanFrame(ttk.Frame, Updatable):
         self.top_label.grid(column=7, row=6, columnspan=5)
         self.visualize_query_plan_label = ttk.Label(self, wraplength=500, font=("Helvetica", 10), width=70, anchor="center")
         self.visualize_query_plan_label.grid(column=7, row=7, columnspan=5,sticky='n')
+        self.view_qep_tree_btn = ttk.Button(self, text="View QEP tree", command=self.view_qep_tree, padding=10, state=["disabled"])
+        self.view_qep_tree_btn.grid(column=7, row=7, columnspan=5)
+        self.qep_tree = None
 
     def update_changes(self, *args, **kwargs):
         if kwargs.get("qptree") is None:
             self.visualize_query_plan_label["text"] = ""
+            self.view_qep_tree_btn.state(["disabled"])
         else:
-            self.visualize_query_plan_label["text"] = get_visualization(kwargs["qptree"])
+            self.qep_tree = kwargs["qptree"]
+            self.view_qep_tree_btn.state(["!disabled"])
+    
+    def view_qep_tree(self):
+        img_file_name = get_visualization(self.qep_tree)
+        with Image.open(img_file_name) as im:
+            im.show()
+    
 
 class InputQueryFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
@@ -140,6 +151,7 @@ class InputQueryFrame(ttk.Frame, Updatable):
         else:
             self.input_query_text.config(state="normal")
             self.analyze_query_button.state(["!disabled"])
+
 
 class ConnectionFrame(ttk.Frame, Updatable):
     def __init__(self, master: tk.Misc, ctx: Context):
