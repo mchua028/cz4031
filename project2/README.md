@@ -1,7 +1,6 @@
 # CZ4031 - Project 2
 
 ![Application Gui](./assets/application_gui.png)
-<center>Fig 1: Application GUI</center>  
 
 ## Requirements
 
@@ -89,7 +88,7 @@ ORDER BY customer.c_nationkey, nation.n_nationkey;
     src="./assets/sample_test_result.png"
     alt="Our logo">
 </img>
-<center>Fig 2: Example of Annotation</center>
+
 ### Additional Information
 
 - [PostgresSQL Optimizer](https://www.postgresql.org/docs/current/planner-optimizer.html)
